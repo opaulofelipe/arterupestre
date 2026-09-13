@@ -27,6 +27,7 @@ PUBLISHABLE_RIGHTS = {
     "permissao_verificada",
     "uso_autorizado",
     "aberta_auto",
+    "web_auto",
 }
 
 PAGE_BG = "#F4F1EA"
@@ -147,6 +148,8 @@ def popup_html(local: dict[str, Any]) -> str:
                 f'<a href="{page_url}" target="_blank" rel="noopener" '
                 'style="color:#6C4939;text-decoration:underline;">Fonte</a>'
             )
+    if image.get("direitos") == "web_auto":
+        footer_bits.append("Fonte externa · direitos não verificados")
     footer = " · ".join(footer_bits)
     footer_html = (
         '<div style="margin-top:10px;font-size:10px;color:#777268;line-height:1.35;">'
