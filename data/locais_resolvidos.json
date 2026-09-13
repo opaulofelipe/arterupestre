@@ -24,12 +24,13 @@
     "resolucao_imagens": {
       "servicos": [
         "Openverse",
-        "Wikimedia Commons"
+        "Wikimedia Commons",
+        "Busca web via DDGS"
       ],
       "modo": "automatico_multimodal",
       "clip": "OpenCLIP",
       "miniatura_largura_px": 900,
-      "observacao": "A seleção automática privilegia imagens abertas e similares visualmente ao tipo de vestígio. Ainda assim, uma revisão pontual continua recomendável para os casos mais raros."
+      "observacao": "A seleção automática privilegia primeiro fontes abertas e usa busca web geral como fallback. Resultados da web sem licença conhecida são marcados como web_auto e mantêm o link da fonte."
     }
   },
   "locais": [
@@ -49,22 +50,22 @@
       "descricao_curta": "Grande concentração de abrigos com pinturas rupestres no sudeste do Piauí.",
       "imagem": {
         "commons_search": "Serra da Capivara rock art Brazil prehistoric painting",
-        "commons_file": "File:Arte rupestre no Piauí.JPG",
-        "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/98/Arte_rupestre_no_Piau%C3%AD.JPG/960px-Arte_rupestre_no_Piau%C3%AD.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-        "page_url": "https://commons.wikimedia.org/wiki/File:Arte_rupestre_no_Piau%C3%AD.JPG",
-        "autor": "Wemerson Vieira de Oliveira",
+        "commons_file": "File:Serra da Capivara - Painting 8.JPG",
+        "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/25/Serra_da_Capivara_-_Painting_8.JPG/960px-Serra_da_Capivara_-_Painting_8.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "page_url": "https://commons.wikimedia.org/wiki/File:Serra_da_Capivara_-_Painting_8.JPG",
+        "autor": "Vitor 1234",
         "licenca": "CC BY-SA 3.0",
         "licenca_url": "https://creativecommons.org/licenses/by-sa/3.0",
         "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "original_url": "https://upload.wikimedia.org/wikipedia/commons/9/98/Arte_rupestre_no_Piau%C3%AD.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "original_url": "https://upload.wikimedia.org/wikipedia/commons/2/25/Serra_da_Capivara_-_Painting_8.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "credito": "Own work",
-        "descricao_imagem": "Beautiful rock paintings are found in the Serra da Capybara National Park. The historical legacy is important not only for Brazil but also worldwide.",
+        "descricao_imagem": "A mural painting. The scene on the left is normally interpreted as a woman giving birth.",
         "source_kind": "commons",
         "fonte_dominio": "Wikimedia Commons",
-        "query_used": "\"Serra da Capivara\" Brasil rock painting",
-        "text_score": 31.2,
-        "clip_score": 11.201,
+        "query_used": "Serra da Capivara cave art",
+        "text_score": 44.5,
+        "clip_score": 13.766,
         "direitos": "aberta_auto"
       }
     },
@@ -85,14 +86,22 @@
       "imagem": {
         "commons_search": "Peruacu rock art Brazil Lapa do Boquete paintings",
         "commons_file": null,
-        "thumbnail_url": null,
-        "page_url": null,
+        "thumbnail_url": "https://ts4.mm.bing.net/th?id=OIP.xjmnZMriJRE49kdkimE3rwHaHc&pid=15.1",
+        "page_url": "https://www.animalia-life.club/qa/pictures/solar-system-wallpaper-for-bedroom",
         "autor": null,
         "licenca": null,
         "licenca_url": null,
-        "status": "sem_resultado",
+        "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "direitos": "nao_verificado"
+        "original_url": "http://lifencolors.in/cdn/shop/products/81d868_165caa44ca624899b212b94fc9d4a705_mv2.jpg?v=1694609637",
+        "credito": null,
+        "descricao_imagem": "Solar System Wallpaper For Bedroom",
+        "source_kind": "web",
+        "fonte_dominio": "Web",
+        "query_used": "Peruacu rock art Brazil Lapa do Boquete paintings",
+        "text_score": 14.0,
+        "clip_score": 2.982,
+        "direitos": "web_auto"
       }
     },
     {
@@ -112,14 +121,22 @@
       "imagem": {
         "commons_search": "Caverna da Pedra Pintada Monte Alegre Para rock paintings",
         "commons_file": null,
-        "thumbnail_url": null,
-        "page_url": null,
+        "thumbnail_url": "https://ts4.mm.bing.net/th?id=OIP.bJttv8Kbb2safenEDv775QHaKq&pid=15.1",
+        "page_url": "https://www.deviantart.com/cdzdbzgoku/art/DBS-Goku-Ultra-Instinct-Perfect-735397462",
         "autor": null,
         "licenca": null,
         "licenca_url": null,
-        "status": "sem_resultado",
+        "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "direitos": "nao_verificado"
+        "original_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/intermediary/f/d233d96c-dfb6-427d-a9f0-87012c95e076/dc5u4ba-7d11153a-1e4d-47dd-9155-37b00e47008b.jpg/v1/fill/w_1280,h_1842,q_70,strp/dbs_goku_ultra_instinct_perfect_by_cdzdbzgoku_dc5u4ba-fullview.jpg",
+        "credito": null,
+        "descricao_imagem": "DBS Goku Ultra Instinct Perfect by cdzdbzGOKU on DeviantArt",
+        "source_kind": "web",
+        "fonte_dominio": "Web",
+        "query_used": "Caverna da Pedra Pintada Monte Alegre Para rock paintings",
+        "text_score": 15.0,
+        "clip_score": -2.793,
+        "direitos": "web_auto"
       }
     },
     {
@@ -151,9 +168,9 @@
         "descricao_imagem": "Rock art at Cueva de las Manos",
         "source_kind": "openverse",
         "fonte_dominio": "flickr",
-        "query_used": "\"Cueva de las Manos\" Argentina rock painting",
+        "query_used": "Cueva de las Manos rock painting",
         "text_score": 48.0,
-        "clip_score": 14.164,
+        "clip_score": 14.396,
         "direitos": "aberta_auto"
       }
     },
@@ -173,23 +190,23 @@
       "descricao_curta": "Milhares de pictogramas em paredões e abrigos de tepuis da Amazônia colombiana.",
       "imagem": {
         "commons_search": "Chiribiquete rock art Colombia pictographs",
-        "commons_file": "File:Chiribiquete petroglyph 2.jpg",
-        "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/39/Chiribiquete_petroglyph_2.jpg/960px-Chiribiquete_petroglyph_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-        "page_url": "https://commons.wikimedia.org/wiki/File:Chiribiquete_petroglyph_2.jpg",
-        "autor": "Carlos Castaño Uribe",
-        "licenca": "CC BY-SA 3.0",
-        "licenca_url": "https://creativecommons.org/licenses/by-sa/3.0",
+        "commons_file": null,
+        "thumbnail_url": "https://ts4.mm.bing.net/th?id=OIP.im3wo5CehQUAlMZweAsJiQHaHV&pid=15.1",
+        "page_url": "https://www.arthimoth.com/blog/greek-and-roman-garden-statues/",
+        "autor": null,
+        "licenca": null,
+        "licenca_url": null,
         "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "original_url": "https://upload.wikimedia.org/wikipedia/commons/3/39/Chiribiquete_petroglyph_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-        "credito": "Email of author",
-        "descricao_imagem": "Petroglyphs in the en:Parque Nacional Natural Chiribiquete",
-        "source_kind": "commons",
-        "fonte_dominio": "Wikimedia Commons",
-        "query_used": "\"Serranía de Chiribiquete\" Colômbia rock painting",
-        "text_score": 48.25,
-        "clip_score": 13.142,
-        "direitos": "aberta_auto"
+        "original_url": "https://www.arthimoth.com/wp-content/uploads/2024/10/Greek-and-Roman-Garden-Statues3.jpg",
+        "credito": null,
+        "descricao_imagem": "Greek and Roman Garden Statues - arthimoth",
+        "source_kind": "web",
+        "fonte_dominio": "arthimoth.com",
+        "query_used": "Chiribiquete rock art Colombia pictographs",
+        "text_score": 14.0,
+        "clip_score": 0.507,
+        "direitos": "web_auto"
       }
     },
     {
@@ -209,14 +226,22 @@
       "imagem": {
         "commons_search": "Toquepala cave paintings Peru rock art",
         "commons_file": null,
-        "thumbnail_url": null,
-        "page_url": null,
+        "thumbnail_url": "https://ts2.mm.bing.net/th?id=OIP.3eVY15IDxPMZYK9BqEHb0gHaJ3&pid=15.1",
+        "page_url": "https://www.pinterest.com/pin/shein-girls-allover-floral-ruffle-hem-cami-dress-in-2022--570338740323381369/",
         "autor": null,
         "licenca": null,
         "licenca_url": null,
-        "status": "sem_resultado",
+        "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "direitos": "nao_verificado"
+        "original_url": "https://i.pinimg.com/originals/78/1f/98/781f9893e3bf4309f91e0bf96259e8eb.jpg",
+        "credito": null,
+        "descricao_imagem": "SHEIN Girls Allover Floral Ruffle Hem Cami Dress | Girly dresses, Girly ...",
+        "source_kind": "web",
+        "fonte_dominio": "www.pinterest.com",
+        "query_used": "Toquepala cave paintings Peru rock art",
+        "text_score": 15.0,
+        "clip_score": -1.918,
+        "direitos": "web_auto"
       }
     },
     {
@@ -236,14 +261,22 @@
       "imagem": {
         "commons_search": "Lower Pecos rock art Pecos River Style Texas mural",
         "commons_file": null,
-        "thumbnail_url": null,
-        "page_url": null,
-        "autor": null,
-        "licenca": null,
-        "licenca_url": null,
-        "status": "sem_resultado",
+        "thumbnail_url": "https://api.openverse.org/v1/images/937c2d3e-35b4-47bc-a7f8-2a457a1b4224/thumb/",
+        "page_url": "https://www.flickr.com/photos/63543454@N07/47342605971",
+        "autor": "RWShea Photography",
+        "licenca": "BY-NC 2.0",
+        "licenca_url": "https://creativecommons.org/licenses/by-nc/2.0/",
+        "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "direitos": "nao_verificado"
+        "original_url": "https://live.staticflickr.com/7803/47342605971_104ecf28aa_b.jpg",
+        "credito": "RWShea Photography",
+        "descricao_imagem": "The 'White Shaman' detail",
+        "source_kind": "openverse",
+        "fonte_dominio": "flickr",
+        "query_used": "Lower Pecos Canyonlands rock art",
+        "text_score": 17.0,
+        "clip_score": 12.915,
+        "direitos": "aberta_auto"
       }
     },
     {
@@ -262,22 +295,22 @@
       "descricao_curta": "Uma das maiores concentrações de petroglifos da América do Norte, com destaque para carneiros-selvagens.",
       "imagem": {
         "commons_search": "Coso Range petroglyphs California bighorn sheep rock art",
-        "commons_file": "File:Coso sheep.jpg",
-        "thumbnail_url": "https://upload.wikimedia.org/wikipedia/commons/b/b4/Coso_sheep.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
-        "page_url": "https://commons.wikimedia.org/wiki/File:Coso_sheep.jpg",
-        "autor": "National Park Service",
+        "commons_file": "File:Coso petroglyphs (1).JPG",
+        "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bc/Coso_petroglyphs_%281%29.JPG/960px-Coso_petroglyphs_%281%29.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "page_url": "https://commons.wikimedia.org/wiki/File:Coso_petroglyphs_(1).JPG",
+        "autor": null,
         "licenca": "Public domain",
         "licenca_url": null,
         "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "original_url": "https://upload.wikimedia.org/wikipedia/commons/b/b4/Coso_sheep.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-        "credito": "http://www.nps.gov/history/archeology/rockArt/scene3.htm",
-        "descricao_imagem": "Coso petroglyphs of bighorn sheep — at the Coso Rock Art District National Historic Landmark , in the northern Mojave Desert and southern Inyo County , California . Protected within the Naval Air Weapons Station China Lake , with occasional civilian public tours. More than 250,000 pre-Columbian rock art petroglyphs are located on 36,000 acres of the Coso Range and surroundings.",
+        "original_url": "https://upload.wikimedia.org/wikipedia/commons/b/bc/Coso_petroglyphs_%281%29.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "credito": null,
+        "descricao_imagem": "Coso petroglyphs (1)",
         "source_kind": "commons",
         "fonte_dominio": "Wikimedia Commons",
-        "query_used": "Coso Range petroglyphs California bighorn sheep rock art",
-        "text_score": 47.85,
-        "clip_score": 12.056,
+        "query_used": "Coso Range petroglyph",
+        "text_score": 55.5,
+        "clip_score": 14.73,
         "direitos": "aberta_auto"
       }
     },
@@ -312,7 +345,7 @@
         "fonte_dominio": "Wikimedia Commons",
         "query_used": "Great Gallery Horseshoe Canyon Barrier Canyon Style rock art",
         "text_score": 67.6,
-        "clip_score": 9.356,
+        "clip_score": 9.781,
         "direitos": "aberta_auto"
       }
     },
@@ -332,22 +365,22 @@
       "descricao_curta": "Paisagem sagrada dos povos das Planícies com grande concentração de gravuras e pinturas.",
       "imagem": {
         "commons_search": "Writing-on-Stone Aisinai'pi rock art Canada petroglyphs",
-        "commons_file": "File:Writing on stone990.jpg",
-        "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3a/Writing_on_stone990.jpg/960px-Writing_on_stone990.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-        "page_url": "https://commons.wikimedia.org/wiki/File:Writing_on_stone990.jpg",
-        "autor": "Matthias Süßen",
-        "licenca": "CC BY-SA 3.0",
-        "licenca_url": "https://creativecommons.org/licenses/by-sa/3.0",
+        "commons_file": "File:Petroglyph from Writing-on-Stone Provincial Park.jpg",
+        "thumbnail_url": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Petroglyph_from_Writing-on-Stone_Provincial_Park.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+        "page_url": "https://commons.wikimedia.org/wiki/File:Petroglyph_from_Writing-on-Stone_Provincial_Park.jpg",
+        "autor": "D. Windrim -",
+        "licenca": "CC BY-SA 2.5",
+        "licenca_url": "https://creativecommons.org/licenses/by-sa/2.5",
         "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "original_url": "https://upload.wikimedia.org/wikipedia/commons/3/3a/Writing_on_stone990.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "original_url": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Petroglyph_from_Writing-on-Stone_Provincial_Park.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "credito": "Own work",
-        "descricao_imagem": "Áísínai'pi National Historic Site of Canada - rock carvings",
+        "descricao_imagem": "A petroglyph from Writing-on-Stone Provincial Park , Alberta, Canada",
         "source_kind": "commons",
         "fonte_dominio": "Wikimedia Commons",
-        "query_used": "\"Writing-on-Stone / Áísínai’pi\" Canadá petroglyph",
-        "text_score": 38.4,
-        "clip_score": 12.239,
+        "query_used": "Writing-on-Stone / Áísínai’pi petroglyph",
+        "text_score": 45.0,
+        "clip_score": 10.646,
         "direitos": "aberta_auto"
       }
     },
@@ -380,9 +413,9 @@
         "descricao_imagem": "The Rock Paintings of Sierra de San Francisco . Prehistoric rock art pictographs of the Cochimi in the Sierra de San Francisco mountain range. A World Heritage Site located in Mulegé Municipality, in the northern region of Baja California Sur state , Mexico.",
         "source_kind": "commons",
         "fonte_dominio": "Wikimedia Commons",
-        "query_used": "\"Sierra de San Francisco\" México rock art",
-        "text_score": 55.85,
-        "clip_score": 12.263,
+        "query_used": "Sierra de San Francisco rock art",
+        "text_score": 51.55,
+        "clip_score": 12.625,
         "direitos": "aberta_auto"
       }
     },
@@ -402,15 +435,23 @@
       "descricao_curta": "Milhares de gravuras em blocos vulcânicos na ilha de Ometepe, no lago Nicarágua.",
       "imagem": {
         "commons_search": "Ometepe petroglyphs Nicaragua pre-Columbian rock art",
-        "commons_file": null,
-        "thumbnail_url": null,
-        "page_url": null,
-        "autor": null,
-        "licenca": null,
-        "licenca_url": null,
-        "status": "sem_resultado",
+        "commons_file": "File:Petroglifo Ometefe.jpg",
+        "thumbnail_url": "https://upload.wikimedia.org/wikipedia/commons/0/0c/Petroglifo_Ometefe.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+        "page_url": "https://commons.wikimedia.org/wiki/File:Petroglifo_Ometefe.jpg",
+        "autor": "No machine-readable author provided. Tabla assumed (based on copyright claims).",
+        "licenca": "CC BY-SA 3.0",
+        "licenca_url": "http://creativecommons.org/licenses/by-sa/3.0/",
+        "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "direitos": "nao_verificado"
+        "original_url": "https://upload.wikimedia.org/wikipedia/commons/0/0c/Petroglifo_Ometefe.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "credito": "No machine-readable source provided. Own work assumed (based on copyright claims).",
+        "descricao_imagem": "Petroglifo en la Isla de Ometepe. 2002",
+        "source_kind": "commons",
+        "fonte_dominio": "Wikimedia Commons",
+        "query_used": "Petroglifos de Ometepe petroglyph",
+        "text_score": 22.2,
+        "clip_score": 13.219,
+        "direitos": "aberta_auto"
       }
     },
     {
@@ -444,7 +485,7 @@
         "fonte_dominio": "Wikimedia Commons",
         "query_used": "Piedra Pintada El Valle de Anton Panama petroglyph",
         "text_score": 69.5,
-        "clip_score": 8.748,
+        "clip_score": 9.513,
         "direitos": "aberta_auto"
       }
     },
@@ -465,14 +506,22 @@
       "imagem": {
         "commons_search": "Cuevas del Pomier Dominican Republic Taino cave art",
         "commons_file": null,
-        "thumbnail_url": null,
-        "page_url": null,
+        "thumbnail_url": "https://ts4.mm.bing.net/th?id=OIP.h3z9qQNlIkTa-mmMJ0Kh7gHaF5&pid=15.1",
+        "page_url": "https://www.pinterest.com/pin/42925002671394864/",
         "autor": null,
         "licenca": null,
         "licenca_url": null,
-        "status": "sem_resultado",
+        "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "direitos": "nao_verificado"
+        "original_url": "https://i.pinimg.com/originals/2a/4d/84/2a4d8418ce9dcd34e5d601f570c3aa9f.jpg",
+        "credito": null,
+        "descricao_imagem": "my friend, my partner, my defender, my dog | Discount home decor, Wall ...",
+        "source_kind": "web",
+        "fonte_dominio": "Web",
+        "query_used": "Cuevas del Pomier Dominican Republic Taino cave art",
+        "text_score": 19.0,
+        "clip_score": -0.214,
+        "direitos": "web_auto"
       }
     },
     {
@@ -492,14 +541,22 @@
       "imagem": {
         "commons_search": "Chauvet cave paintings prehistoric lions rhinoceros",
         "commons_file": null,
-        "thumbnail_url": null,
-        "page_url": null,
+        "thumbnail_url": "https://ts3.mm.bing.net/th?id=OIP.xF7TmGOpCC7paew8-3Sl1gHaEK&pid=15.1",
+        "page_url": "https://wallpapercave.com/spiral-galaxy-4k-wallpapers",
         "autor": null,
         "licenca": null,
         "licenca_url": null,
-        "status": "sem_resultado",
+        "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "direitos": "nao_verificado"
+        "original_url": "https://wallpapercave.com/wp/wp5017468.jpg",
+        "credito": null,
+        "descricao_imagem": "Spiral Galaxy 4K Wallpapers - Wallpaper Cave",
+        "source_kind": "web",
+        "fonte_dominio": "wallpapercave.com",
+        "query_used": "Chauvet cave paintings prehistoric lions rhinoceros",
+        "text_score": 19.0,
+        "clip_score": 1.036,
+        "direitos": "web_auto"
       }
     },
     {
@@ -519,21 +576,21 @@
       "imagem": {
         "commons_search": "Lascaux cave paintings Hall of the Bulls prehistoric",
         "commons_file": null,
-        "thumbnail_url": "https://api.openverse.org/v1/images/e43415cc-a443-46ad-a213-aaa3dd3e53f6/thumb/",
-        "page_url": "https://www.flickr.com/photos/31856336@N03/35992500056",
-        "autor": "subarcticmike",
-        "licenca": "BY 2.0",
-        "licenca_url": "https://creativecommons.org/licenses/by/2.0/",
+        "thumbnail_url": "https://api.openverse.org/v1/images/dd8b01c8-47de-4454-b0c9-7b504a9da468/thumb/",
+        "page_url": "https://www.flickr.com/photos/50193753@N02/5961953059",
+        "autor": "Adibu456",
+        "licenca": "BY-NC 2.0",
+        "licenca_url": "https://creativecommons.org/licenses/by-nc/2.0/",
         "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "original_url": "https://live.staticflickr.com/4311/35992500056_d4a4643608_b.jpg",
-        "credito": "subarcticmike",
-        "descricao_imagem": "left wall of the hall of bulls",
+        "original_url": "https://live.staticflickr.com/6021/5961953059_a6a0a39ef8_b.jpg",
+        "credito": "Adibu456",
+        "descricao_imagem": "Lascaux II - Hall of The Bulls",
         "source_kind": "openverse",
         "fonte_dominio": "flickr",
         "query_used": "Lascaux cave paintings Hall of the Bulls prehistoric",
-        "text_score": 32.0,
-        "clip_score": 14.132,
+        "text_score": 36.5,
+        "clip_score": 11.476,
         "direitos": "aberta_auto"
       }
     },
@@ -568,7 +625,7 @@
         "fonte_dominio": "Wikimedia Commons",
         "query_used": "Altamira cave paintings bison prehistoric",
         "text_score": 43.75,
-        "clip_score": 11.959,
+        "clip_score": 12.162,
         "direitos": "aberta_auto"
       }
     },
@@ -603,7 +660,7 @@
         "fonte_dominio": "Wikimedia Commons",
         "query_used": "Coa Valley prehistoric rock engravings Portugal horse",
         "text_score": 64.25,
-        "clip_score": 12.867,
+        "clip_score": 13.29,
         "direitos": "aberta_auto"
       }
     },
@@ -623,22 +680,22 @@
       "descricao_curta": "Vale alpino com dezenas de milhares de gravuras representando animais, figuras humanas, armas e cenas sociais.",
       "imagem": {
         "commons_search": "Valcamonica rock drawings Italy prehistoric petroglyphs",
-        "commons_file": "File:Calco gesso incisione rupestre cervo Valcamonica 1965.jpg",
-        "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e6/Calco_gesso_incisione_rupestre_cervo_Valcamonica_1965.jpg/960px-Calco_gesso_incisione_rupestre_cervo_Valcamonica_1965.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-        "page_url": "https://commons.wikimedia.org/wiki/File:Calco_gesso_incisione_rupestre_cervo_Valcamonica_1965.jpg",
-        "autor": "Roger469",
-        "licenca": "Public domain",
-        "licenca_url": null,
+        "commons_file": null,
+        "thumbnail_url": "https://api.openverse.org/v1/images/7d5817c7-0d6d-4f33-a4dc-a3fd313624f3/thumb/",
+        "page_url": "https://www.flickr.com/photos/25825879@N05/44647263184",
+        "autor": "Alan Denney",
+        "licenca": "BY-NC-SA 2.0",
+        "licenca_url": "https://creativecommons.org/licenses/by-nc-sa/2.0/",
         "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "original_url": "https://upload.wikimedia.org/wikipedia/commons/e/e6/Calco_gesso_incisione_rupestre_cervo_Valcamonica_1965.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-        "credito": "Own work",
-        "descricao_imagem": "Plaster casting of a rock engraving of a deer representative Valcamonica made in 1965",
-        "source_kind": "commons",
-        "fonte_dominio": "Wikimedia Commons",
-        "query_used": "Valcamonica rock drawings Italy prehistoric petroglyphs",
-        "text_score": 29.9,
-        "clip_score": 11.41,
+        "original_url": "https://live.staticflickr.com/1934/44647263184_d03dc7ff93_b.jpg",
+        "credito": "Alan Denney",
+        "descricao_imagem": "Rock art - Cemmo, Valcamonica",
+        "source_kind": "openverse",
+        "fonte_dominio": "flickr",
+        "query_used": "Valcamonica petroglyph",
+        "text_score": 37.5,
+        "clip_score": 13.125,
         "direitos": "aberta_auto"
       }
     },
@@ -658,15 +715,23 @@
       "descricao_curta": "Caverna conhecida pelos cavalos pontilhados, mãos negativas e figuras animais.",
       "imagem": {
         "commons_search": "Pech Merle spotted horses cave painting prehistoric",
-        "commons_file": null,
-        "thumbnail_url": null,
-        "page_url": null,
+        "commons_file": "File:Pech Merle main.jpg",
+        "thumbnail_url": "https://upload.wikimedia.org/wikipedia/commons/e/e6/Pech_Merle_main.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+        "page_url": "https://commons.wikimedia.org/wiki/File:Pech_Merle_main.jpg",
         "autor": null,
-        "licenca": null,
+        "licenca": "Public domain",
         "licenca_url": null,
-        "status": "sem_resultado",
+        "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "direitos": "nao_verificado"
+        "original_url": "https://upload.wikimedia.org/wikipedia/commons/e/e6/Pech_Merle_main.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "credito": null,
+        "descricao_imagem": "Pech Merle main",
+        "source_kind": "commons",
+        "fonte_dominio": "Wikimedia Commons",
+        "query_used": "Pech Merle rock painting",
+        "text_score": 29.0,
+        "clip_score": 11.792,
+        "direitos": "aberta_auto"
       }
     },
     {
@@ -686,14 +751,22 @@
       "imagem": {
         "commons_search": "Cosquer cave prehistoric rock art hand stencils animals",
         "commons_file": null,
-        "thumbnail_url": null,
-        "page_url": null,
+        "thumbnail_url": "https://ts1.mm.bing.net/th?id=OIP.zW7fyVh_Rl2G7s8Ygsiz0gHaEK&pid=15.1",
+        "page_url": "https://www.gpotato.com.br/gears-of-war-e-day-revolucionara-a-saga-no-20o-aniversario/",
         "autor": null,
         "licenca": null,
         "licenca_url": null,
-        "status": "sem_resultado",
+        "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "direitos": "nao_verificado"
+        "original_url": "https://www.gpotato.com.br/wp-content/uploads/2025/12/Gears-of-War-E-Day_C8yKKrY.jpg",
+        "credito": null,
+        "descricao_imagem": "Gears of War: E-Day Revolucionará a Saga no 20º Aniversário - gPotato",
+        "source_kind": "web",
+        "fonte_dominio": "Web",
+        "query_used": "Cosquer cave prehistoric rock art hand stencils animals",
+        "text_score": 15.0,
+        "clip_score": -1.2,
+        "direitos": "web_auto"
       }
     },
     {
@@ -712,15 +785,23 @@
       "descricao_curta": "Caverna cantábrica com longa sequência paleolítica e alguns dos motivos parietais mais antigos datados na Europa.",
       "imagem": {
         "commons_search": "El Castillo cave Spain prehistoric hand stencil red disk",
-        "commons_file": null,
-        "thumbnail_url": null,
-        "page_url": null,
-        "autor": null,
-        "licenca": null,
-        "licenca_url": null,
-        "status": "sem_resultado",
+        "commons_file": "File:Giraffes, EL Castillo Cave, Cantabria Spain - Upper Paleolithic Cave Art.png",
+        "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/32/Giraffes%2C_EL_Castillo_Cave%2C_Cantabria_Spain_-_Upper_Paleolithic_Cave_Art.png/960px-Giraffes%2C_EL_Castillo_Cave%2C_Cantabria_Spain_-_Upper_Paleolithic_Cave_Art.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "page_url": "https://commons.wikimedia.org/wiki/File:Giraffes,_EL_Castillo_Cave,_Cantabria_Spain_-_Upper_Paleolithic_Cave_Art.png",
+        "autor": "Bernietaylor",
+        "licenca": "CC BY-SA 4.0",
+        "licenca_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "direitos": "nao_verificado"
+        "original_url": "https://upload.wikimedia.org/wikipedia/commons/3/32/Giraffes%2C_EL_Castillo_Cave%2C_Cantabria_Spain_-_Upper_Paleolithic_Cave_Art.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "credito": "Own work",
+        "descricao_imagem": "Image presented by Bernie Taylor at the American Anthropological Assoc, Institute for Astronomy/Maui, European Society for Astronomy in Culture/SEAC, American Ornithological Society symposiums and conferences between 2018 - 2023",
+        "source_kind": "commons",
+        "fonte_dominio": "Wikimedia Commons",
+        "query_used": "Caverna de El Castillo cave art",
+        "text_score": 46.5,
+        "clip_score": 10.006,
+        "direitos": "aberta_auto"
       }
     },
     {
@@ -740,14 +821,22 @@
       "imagem": {
         "commons_search": "Liang Metanduno Muna Island hand stencil rock art",
         "commons_file": null,
-        "thumbnail_url": null,
-        "page_url": null,
+        "thumbnail_url": "https://ts3.mm.bing.net/th?id=OIP.GIZ40PoWcM581uChQD3XIwHaEK&pid=15.1",
+        "page_url": "https://storage.googleapis.com/dfwllgbqnnouve/what-is-poki-games.html",
         "autor": null,
         "licenca": null,
         "licenca_url": null,
-        "status": "sem_resultado",
+        "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "direitos": "nao_verificado"
+        "original_url": "https://powerupgaming.co.uk/wp-content/uploads/Top-20-Poki-Games.png",
+        "credito": null,
+        "descricao_imagem": "What Is Poki Games at Elma Thomas blog",
+        "source_kind": "web",
+        "fonte_dominio": "Web",
+        "query_used": "Liang Metanduno Muna Island hand stencil rock art",
+        "text_score": 17.0,
+        "clip_score": -2.408,
+        "direitos": "web_auto"
       }
     },
     {
@@ -767,14 +856,22 @@
       "imagem": {
         "commons_search": "Leang Bulu Sipong 4 Sulawesi rock art hunting scene",
         "commons_file": null,
-        "thumbnail_url": null,
-        "page_url": null,
+        "thumbnail_url": "https://ts1.mm.bing.net/th?id=OIP.s8wdd2HDGzFCtrSS0WQY5AAAAA&pid=15.1",
+        "page_url": "https://www.gettyimages.com/photos/erik-hayser",
         "autor": null,
         "licenca": null,
         "licenca_url": null,
-        "status": "sem_resultado",
+        "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "direitos": "nao_verificado"
+        "original_url": "https://media.gettyimages.com/id/699027900/photo/erik-hayser-attends-el-senor-de-los-cielos-season-5-premiere-red-carpet-at-cinemex-antara.jpg?s=612x612&w=gi&k=20&c=i3keqMqymrrp8nbe1BO7Wf3p_1GtcRRt4bsfkaIHj8k=",
+        "credito": null,
+        "descricao_imagem": "Erik Hayser Photos and Premium High Res Pictures - Getty Images",
+        "source_kind": "web",
+        "fonte_dominio": "gettyimages.com",
+        "query_used": "Leang Bulu Sipong 4 Sulawesi rock art hunting scene",
+        "text_score": 14.0,
+        "clip_score": 1.919,
+        "direitos": "web_auto"
       }
     },
     {
@@ -808,7 +905,7 @@
         "fonte_dominio": "flickr",
         "query_used": "Bhimbetka rock shelters prehistoric paintings India",
         "text_score": 46.5,
-        "clip_score": 13.041,
+        "clip_score": 13.325,
         "direitos": "aberta_auto"
       }
     },
@@ -829,14 +926,22 @@
       "imagem": {
         "commons_search": "Tamgaly petroglyphs Kazakhstan sun head Bronze Age",
         "commons_file": null,
-        "thumbnail_url": null,
-        "page_url": null,
-        "autor": null,
-        "licenca": null,
-        "licenca_url": null,
-        "status": "sem_resultado",
+        "thumbnail_url": "https://api.openverse.org/v1/images/ad772935-7b83-475f-807d-926f126a7b47/thumb/",
+        "page_url": "https://www.flickr.com/photos/30818542@N04/9077438644",
+        "autor": "fveronesi1",
+        "licenca": "BY-NC-SA 2.0",
+        "licenca_url": "https://creativecommons.org/licenses/by-nc-sa/2.0/",
+        "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "direitos": "nao_verificado"
+        "original_url": "https://live.staticflickr.com/5507/9077438644_1b144c40fa_b.jpg",
+        "credito": "fveronesi1",
+        "descricao_imagem": "Tamgaly petroglyphs - Taukum Desert - Kazakistan_S4E2106",
+        "source_kind": "openverse",
+        "fonte_dominio": "flickr",
+        "query_used": "Tamgaly petroglyph",
+        "text_score": 51.5,
+        "clip_score": 14.959,
+        "direitos": "aberta_auto"
       }
     },
     {
@@ -855,22 +960,22 @@
       "descricao_curta": "Paisagem semidesértica com mais de seis mil gravuras de seres humanos, animais, barcos e cenas coletivas.",
       "imagem": {
         "commons_search": "Gobustan rock art Azerbaijan petroglyphs boat dancers",
-        "commons_file": "File:Gobustan - Qobustan.jpg",
-        "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b5/Gobustan_-_Qobustan.jpg/960px-Gobustan_-_Qobustan.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-        "page_url": "https://commons.wikimedia.org/wiki/File:Gobustan_-_Qobustan.jpg",
-        "autor": "AlixSaz",
-        "licenca": "CC BY-SA 4.0",
-        "licenca_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "commons_file": "File:Petroglyphs of Qobustan 2.jpg",
+        "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e0/Petroglyphs_of_Qobustan_2.jpg/960px-Petroglyphs_of_Qobustan_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "page_url": "https://commons.wikimedia.org/wiki/File:Petroglyphs_of_Qobustan_2.jpg",
+        "autor": "Walter Callens",
+        "licenca": "CC BY 1.0",
+        "licenca_url": "https://creativecommons.org/licenses/by/1.0",
         "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "original_url": "https://upload.wikimedia.org/wikipedia/commons/b/b5/Gobustan_-_Qobustan.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-        "credito": "Own work",
-        "descricao_imagem": "Gobustan is a historical and artistic reserve in the open air, which is included in the list of cultural assets of UNESCO.",
+        "original_url": "https://upload.wikimedia.org/wikipedia/commons/e/e0/Petroglyphs_of_Qobustan_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "credito": "https://www.flickr.com/photos/waltercallens/3071413626/in/set-72157609842031972/",
+        "descricao_imagem": "Petroglyphs of Qobustan (Azerbaijan); a UNESCO World Heritage. Settled since the 8th millennium BC, the area contains thousands of rock engravings spread over 100 square km depicting hunting scenes, people, ships, constellations, animals, etc. Qobustan's consecration in the world stage arrived in 2007, when UNESCO included the 'Qobustan Rock Art Cultural Landscape' in the World Heritage list. The oldest petroglyphs date from the 12th century BC. Later, the European invaders also left their marks: inscriptions left by Alexander the Great's cohorts in the 4th century BC and 2,000-year-old graffiti written by Trajan's Roman legionnaires! The petroglyphs of Qobustan were discovered accidentally by quarry workers only in the 1930s. In addition to the rock carvings, traces of Mesolithic period occupation are to be seen, with numerous burial mounds and graves. The local museum adjacent to the site houses the ornaments, flints, shells, ceramics, beads and primitive tools that were found inside the caves - often objects of non Caspian origin, evidence of ancient links with Europe and the Indian sub-continent. Based on the archeological finds and on content of the petroglyphs, recently it has be theorized that a connection exists between the ancient Azeris and the peoples of Scandinavia, which is not surprising at all, since some of the original habitants of the region, the Medes, were not a Turkic people, but an Indo-European people.",
         "source_kind": "commons",
         "fonte_dominio": "Wikimedia Commons",
-        "query_used": "\"Gobustan\" Azerbaijão petroglyph",
-        "text_score": 20.1,
-        "clip_score": 9.727,
+        "query_used": "Gobustan petroglyph",
+        "text_score": 60.2,
+        "clip_score": 13.79,
         "direitos": "aberta_auto"
       }
     },
@@ -891,14 +996,22 @@
       "imagem": {
         "commons_search": "Jubbah Shuwaymis Hail Saudi Arabia rock art petroglyphs",
         "commons_file": null,
-        "thumbnail_url": null,
-        "page_url": null,
+        "thumbnail_url": "https://ts4.mm.bing.net/th?id=OIP.eCWqZYTmAFTbWo1aRDGSmgHaD3&pid=15.1",
+        "page_url": "https://mecanicosvalencia.es/pato-mecanico-jacques-de-vaucanson/",
         "autor": null,
         "licenca": null,
         "licenca_url": null,
-        "status": "sem_resultado",
+        "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "direitos": "nao_verificado"
+        "original_url": "https://mecanicosvalencia.es/wp-content/uploads/que-invento-jacques-de-vaucanson-1.webp",
+        "credito": null,
+        "descricao_imagem": "Pato mecánico de jacques de vaucanson: un hito en la historia de la ...",
+        "source_kind": "web",
+        "fonte_dominio": "mecanicosvalencia.es",
+        "query_used": "Arte Rupestre da Região de Hail petroglyph",
+        "text_score": 18.0,
+        "clip_score": 3.176,
+        "direitos": "web_auto"
       }
     },
     {
@@ -918,14 +1031,22 @@
       "imagem": {
         "commons_search": "Helan Mountains rock art China petroglyph sun god",
         "commons_file": null,
-        "thumbnail_url": null,
-        "page_url": null,
+        "thumbnail_url": "https://ts3.mm.bing.net/th?id=OIP.6WMJJB0_fTQUnMihNMAbzgHaJ4&pid=15.1",
+        "page_url": "https://www.worthpoint.com/worthopedia/original-vintage-george-harrison-wife-4617621906",
         "autor": null,
         "licenca": null,
         "licenca_url": null,
-        "status": "sem_resultado",
+        "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "direitos": "nao_verificado"
+        "original_url": "https://thumbs.worthpoint.com/zoom/images2/1/0223/28/original-vintage-george-harrison-wife_1_55ec15ca38927ca0293bbf153b1c90b5.jpg",
+        "credito": null,
+        "descricao_imagem": "ORIGINAL VINTAGE GEORGE HARRISON AND WIFE PATTIE BOYD PHOTO BEATLES ...",
+        "source_kind": "web",
+        "fonte_dominio": "worthpoint.com",
+        "query_used": "Arte Rupestre das Montanhas Helan petroglyph",
+        "text_score": 16.0,
+        "clip_score": -1.061,
+        "direitos": "web_auto"
       }
     },
     {
@@ -945,14 +1066,22 @@
       "imagem": {
         "commons_search": "Mongolian Altai petroglyphs prehistoric Mongolia",
         "commons_file": null,
-        "thumbnail_url": null,
-        "page_url": null,
+        "thumbnail_url": "https://ts4.mm.bing.net/th?id=OIP.2sSG1aDAylK2fuQvvxk9DQHaFj&pid=15.1",
+        "page_url": "https://www.youtube.com/watch?v=RTazMw6gQ6E",
         "autor": null,
         "licenca": null,
         "licenca_url": null,
-        "status": "sem_resultado",
+        "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "direitos": "nao_verificado"
+        "original_url": "https://i.ytimg.com/vi/RTazMw6gQ6E/hqdefault.jpg",
+        "credito": null,
+        "descricao_imagem": "Mongolian wrestling is a Jojo reference - Giorno theme in background ...",
+        "source_kind": "web",
+        "fonte_dominio": "Web",
+        "query_used": "Mongolian Altai petroglyphs prehistoric Mongolia",
+        "text_score": 20.0,
+        "clip_score": 2.978,
+        "direitos": "web_auto"
       }
     },
     {
@@ -986,7 +1115,7 @@
         "fonte_dominio": "Wikimedia Commons",
         "query_used": "Murujuga Burrup Peninsula rock art petroglyph Australia",
         "text_score": 29.45,
-        "clip_score": 6.391,
+        "clip_score": 6.923,
         "direitos": "aberta_auto"
       }
     },
@@ -1007,14 +1136,22 @@
       "imagem": {
         "commons_search": "Kakadu Ubirr rock art Australia Aboriginal x-ray painting",
         "commons_file": null,
-        "thumbnail_url": null,
-        "page_url": null,
+        "thumbnail_url": "https://ts3.mm.bing.net/th?id=OIP.oNjP_40UV0jgLh3g6CLAXAHaE8&pid=15.1",
+        "page_url": "https://www.hennesseyperformance.com/vehicles/toyota-tundra-trd-upgrade/",
         "autor": null,
         "licenca": null,
         "licenca_url": null,
-        "status": "sem_resultado",
+        "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "direitos": "nao_verificado"
+        "original_url": "https://hpe-photos.s3.us-east-2.amazonaws.com/wp-content/uploads/2024/04/Hennessey-Toyota-Tundra-TRD-Off-road-Upgrade-12.jpg",
+        "credito": null,
+        "descricao_imagem": "The Best Toyota Tundra TRD Upgrade - Hennessey Performance",
+        "source_kind": "web",
+        "fonte_dominio": "www.hennesseyperformance.com",
+        "query_used": "Kakadu Ubirr rock art Australia Aboriginal x-ray painting",
+        "text_score": 7.0,
+        "clip_score": -2.192,
+        "direitos": "web_auto"
       }
     },
     {
@@ -1034,14 +1171,22 @@
       "imagem": {
         "commons_search": "Nawarla Gabarnmang rock art painted slab Australia",
         "commons_file": null,
-        "thumbnail_url": null,
-        "page_url": null,
+        "thumbnail_url": "https://ts2.mm.bing.net/th?id=OIP.2eRxTgi0LmGEBXJaKsvC3QHaNK&pid=15.1",
+        "page_url": "https://wallpaperaccess.com/radha-rani",
         "autor": null,
         "licenca": null,
         "licenca_url": null,
-        "status": "sem_resultado",
+        "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "direitos": "nao_verificado"
+        "original_url": "https://wallpaperaccess.com/full/8727295.jpg",
+        "credito": null,
+        "descricao_imagem": "Radha Rani Wallpapers - Top Free Radha Rani Backgrounds - WallpaperAccess",
+        "source_kind": "web",
+        "fonte_dominio": "wallpaperaccess.com",
+        "query_used": "Nawarla Gabarnmang cave art",
+        "text_score": 16.0,
+        "clip_score": -0.91,
+        "direitos": "web_auto"
       }
     },
     {
@@ -1075,7 +1220,7 @@
         "fonte_dominio": "Wikimedia Commons",
         "query_used": "Kimberley Gwion Gwion rock art Australia",
         "text_score": 45.0,
-        "clip_score": 14.599,
+        "clip_score": 15.16,
         "direitos": "aberta_auto"
       }
     },
@@ -1110,7 +1255,7 @@
         "fonte_dominio": "Wikimedia Commons",
         "query_used": "Blombos Cave engraved ochre South Africa",
         "text_score": 38.8,
-        "clip_score": 6.191,
+        "clip_score": 6.475,
         "direitos": "aberta_auto"
       }
     },
@@ -1145,7 +1290,7 @@
         "fonte_dominio": "Wikimedia Commons",
         "query_used": "Apollo 11 Cave stones Namibia prehistoric art",
         "text_score": 55.7,
-        "clip_score": 9.715,
+        "clip_score": 10.239,
         "direitos": "aberta_auto"
       }
     },
@@ -1166,14 +1311,22 @@
       "imagem": {
         "commons_search": "Qurta rock art Egypt Pleistocene petroglyphs aurochs",
         "commons_file": null,
-        "thumbnail_url": null,
-        "page_url": null,
+        "thumbnail_url": "https://ts3.mm.bing.net/th?id=OIP.UuavqahR4x49r3Pmh_BQjAHaSh&pid=15.1",
+        "page_url": "https://www.studocu.com/es-mx/document/universidad-popular-autonoma-de-veracruz/proyecto-de-nacion/infografia-sobre-los-pueblos-prehispanicos-y-culturas-historia-antigua/151120418",
         "autor": null,
         "licenca": null,
         "licenca_url": null,
-        "status": "sem_resultado",
+        "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "direitos": "nao_verificado"
+        "original_url": "https://website-assets.studocu.com/img/document_thumbnails/788f5aad842f1970c44840508706c0de/thumb_1200_3000.png",
+        "credito": null,
+        "descricao_imagem": "Infografía sobre los Pueblos Prehispánicos y Culturas (Historia Antigua ...",
+        "source_kind": "web",
+        "fonte_dominio": "studocu.com",
+        "query_used": "Qurta petroglyph",
+        "text_score": 14.0,
+        "clip_score": 4.528,
+        "direitos": "web_auto"
       }
     },
     {
@@ -1192,22 +1345,22 @@
       "descricao_curta": "Um dos maiores arquivos visuais da pré-história saariana, com fauna, pastoreio, figuras humanas e cenas rituais.",
       "imagem": {
         "commons_search": "Tassili n'Ajjer rock art Algeria prehistoric paintings",
-        "commons_file": "File:Algerien Desert.jpg",
-        "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/07/Algerien_Desert.jpg/960px-Algerien_Desert.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-        "page_url": "https://commons.wikimedia.org/wiki/File:Algerien_Desert.jpg",
+        "commons_file": "File:Algerien 5 0049.jpg",
+        "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/da/Algerien_5_0049.jpg/960px-Algerien_5_0049.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "page_url": "https://commons.wikimedia.org/wiki/File:Algerien_5_0049.jpg",
         "autor": "Gruban",
         "licenca": "CC BY-SA 2.0",
         "licenca_url": "https://creativecommons.org/licenses/by-sa/2.0",
         "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "original_url": "https://upload.wikimedia.org/wikipedia/commons/0/07/Algerien_Desert.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-        "credito": "File:Algerien 5 0049.jpg",
-        "descricao_imagem": "Algerien Desert",
+        "original_url": "https://upload.wikimedia.org/wikipedia/commons/d/da/Algerien_5_0049.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "credito": "[1]",
+        "descricao_imagem": "Jabbaren Rock Art in the style of bovine herders. A tribe on the move. The oxen carry the women and children, as well as the long, arched tent frames, which are secured to their horns. Arrowmen lead the way.",
         "source_kind": "commons",
         "fonte_dominio": "Wikimedia Commons",
         "query_used": "Tassili n'Ajjer rock art Algeria prehistoric paintings",
-        "text_score": 21.0,
-        "clip_score": 14.542,
+        "text_score": 28.75,
+        "clip_score": 14.57,
         "direitos": "aberta_auto"
       }
     },
@@ -1242,7 +1395,7 @@
         "fonte_dominio": "Wikimedia Commons",
         "query_used": "Tadrart Acacus rock art Libya prehistoric paintings",
         "text_score": 40.95,
-        "clip_score": 12.753,
+        "clip_score": 13.139,
         "direitos": "aberta_auto"
       }
     },
@@ -1262,22 +1415,22 @@
       "descricao_curta": "Abrigos com pinturas muito preservadas de bovinos ornamentados, seres humanos e animais selvagens.",
       "imagem": {
         "commons_search": "Laas Geel cave paintings Somaliland cattle rock art",
-        "commons_file": null,
-        "thumbnail_url": "https://api.openverse.org/v1/images/8f04315c-efde-4b0b-91d0-3a04666b0bbc/thumb/",
-        "page_url": "https://www.flickr.com/photos/59442036@N08/51430815473",
-        "autor": "wgauthier",
-        "licenca": "BY-SA 2.0",
-        "licenca_url": "https://creativecommons.org/licenses/by-sa/2.0/",
+        "commons_file": "File:Laas Geel cow herd.jpg",
+        "thumbnail_url": "https://upload.wikimedia.org/wikipedia/commons/4/48/Laas_Geel_cow_herd.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+        "page_url": "https://commons.wikimedia.org/wiki/File:Laas_Geel_cow_herd.jpg",
+        "autor": "najeeb",
+        "licenca": "CC BY-SA 2.0",
+        "licenca_url": "https://creativecommons.org/licenses/by-sa/2.0",
         "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "original_url": "https://live.staticflickr.com/65535/51430815473_6ff718b9d2_b.jpg",
-        "credito": "wgauthier",
-        "descricao_imagem": "Laas Geel",
-        "source_kind": "openverse",
-        "fonte_dominio": "flickr",
-        "query_used": "Laas Geel cave paintings Somaliland cattle rock art",
-        "text_score": 32.0,
-        "clip_score": 13.485,
+        "original_url": "https://upload.wikimedia.org/wikipedia/commons/4/48/Laas_Geel_cow_herd.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "credito": "Herd of cows",
+        "descricao_imagem": "Detail of the Laas Geel cave paintings (near Hargeysa, Somaliland/Somalia) showing a cow herd.",
+        "source_kind": "commons",
+        "fonte_dominio": "Wikimedia Commons",
+        "query_used": "Laas Geel cave art",
+        "text_score": 49.2,
+        "clip_score": 11.103,
         "direitos": "aberta_auto"
       }
     },
@@ -1298,14 +1451,22 @@
       "imagem": {
         "commons_search": "Tsodilo Hills rock art Botswana paintings",
         "commons_file": null,
-        "thumbnail_url": null,
-        "page_url": null,
+        "thumbnail_url": "https://ts3.mm.bing.net/th?id=OIP.Gio_j3uRiRBtgQIN5iUmGQHaJ1&pid=15.1",
+        "page_url": "https://storage.googleapis.com/cxwgbjswqahfiiyfooblog/boho-reading-nook-ideas.html",
         "autor": null,
         "licenca": null,
         "licenca_url": null,
-        "status": "sem_resultado",
+        "status": "resolvido_automaticamente",
         "preferencia": "fotografia da arte, gravura, pintura ou artefato do próprio sítio; evitar paisagem quando houver imagem do vestígio",
-        "direitos": "nao_verificado"
+        "original_url": "http://homemadegraceful.com/wp-content/uploads/2024/04/boho-reading-nook-corner-4.jpg",
+        "credito": null,
+        "descricao_imagem": "Cozy Boho Reading Nook Ideas for a Tranquil Home Space",
+        "source_kind": "web",
+        "fonte_dominio": "Web",
+        "query_used": "Tsodilo Hills rock art Botswana paintings",
+        "text_score": 17.0,
+        "clip_score": -1.165,
+        "direitos": "web_auto"
       }
     },
     {
@@ -1337,9 +1498,9 @@
         "descricao_imagem": "More petroglyphs near the Dabous Giraffes, Niger, 1991",
         "source_kind": "commons",
         "fonte_dominio": "Wikimedia Commons",
-        "query_used": "\"Dabous\" Níger petroglyph",
-        "text_score": 44.2,
-        "clip_score": 11.115,
+        "query_used": "Dabous petroglyph",
+        "text_score": 42.0,
+        "clip_score": 11.633,
         "direitos": "aberta_auto"
       }
     }
