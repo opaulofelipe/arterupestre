@@ -38,7 +38,20 @@ jobs:
 
           getimg 'serra_da_capivara.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Pinturas_rupestres_serra_da_capivara.jpg?width=1600'
           getimg 'vale_do_peruacu.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Pinturas_Rupestres_2.jpg?width=1600'
-          getimg 'pedra_pintada_monte_alegre.jpg' 'https://agenciapara.com.br/midias/2022/grandes/12890_8ff0f41a-48af-45b4-a73b-ce5717159141.jpg'
+
+          echo 'Baixando pedra_pintada_monte_alegre.jpg'
+          curl -fL --retry 3 --retry-delay 2 --compressed \
+            -A 'Mozilla/5.0' \
+            -e 'https://www.agenciapara.com.br/galeria/12890/parque-estadual-monte-alegre-e-escolhido-como-um-dos-25-patrimonios-mundiais' \
+            -H 'Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8' \
+            'https://www.agenciapara.com.br/midias/2022/grandes/12890_8ff0f41a-48af-45b4-a73b-ce5717159141.jpg' \
+            -o data/pedra_pintada_monte_alegre.jpg
+          file data/pedra_pintada_monte_alegre.jpg
+          if ! file data/pedra_pintada_monte_alegre.jpg | grep -qiE 'JPEG image data|PNG image data|WebP image data'; then
+            echo 'Arquivo invalido: data/pedra_pintada_monte_alegre.jpg'
+            exit 1
+          fi
+
           getimg 'cueva_de_las_manos.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Cueva_de_las_Manos_%286811931046%29.jpg?width=1600'
           getimg 'chiribiquete.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Chiribiquete_petroglyph_3.jpg?width=1600'
           getimg 'toquepala.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Toquepala_Caves_1.jpg?width=1600'
