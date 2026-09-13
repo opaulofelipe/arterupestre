@@ -14,6 +14,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: resolve-images-main
+  cancel-in-progress: true
+
 jobs:
   resolve-images:
     runs-on: ubuntu-latest
@@ -22,6 +26,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Configurar Python
         uses: actions/setup-python@v5
@@ -35,16 +41,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements_resolver.txt
 
-      - name: Resolver imagens
+      - name: Resolver apenas imagens ausentes
         run: |
           python image_resolver.py \
-            --input data/locais.json \
+            --input data/locais_resolvidos.json \
             --output data/locais_resolvidos.json \
-            --overwrite \
             --no-cache \
-            --candidates 12 \
-            --download-candidates 6 \
-            --query-variants 3 \
+            --candidates 20 \
+            --download-candidates 10 \
+            --query-variants 6 \
             --contact "https://github.com/${{ github.repository }}"
 
       - name: Salvar banco resolvido
@@ -53,7 +58,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add data/locais_resolvidos.json
-            git commit -m "Atualiza imagens resolvidas automaticamente"
+            git commit -m "Amplia cobertura automática de imagens"
             git pull --rebase origin main
             git push origin HEAD:main
           else
