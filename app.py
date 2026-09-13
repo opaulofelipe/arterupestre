@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import base64
 import html
+import io
 import json
 import unicodedata
 from pathlib import Path
@@ -9,26 +11,26 @@ from typing import Any
 import folium
 import requests
 import streamlit as st
+from PIL import Image, ImageOps
 from folium.plugins import Fullscreen
 from streamlit_folium import st_folium
 
 APP_DIR = Path(__file__).resolve().parent
 DATA_DIR = APP_DIR / "data"
-DEFAULT_DB = DATA_DIR / "locais.json"
-RESOLVED_DB = DATA_DIR / "locais_resolvidos.json"
+DATABASE_PATH = DATA_DIR / "locais.json"
+
+# Quase todos os JPGs têm exatamente o mesmo nome do campo "id" do JSON.
+# Só estes três usam nomes diferentes na pasta data/.
+IMAGE_FILE_OVERRIDES = {
+    "blombos": "blombos_cave.jpg",
+    "apollo_11": "apollo_11_cave.jpg",
+    "tsodilo": "tsodilo_hills.jpg",
+}
 
 WORLD_GEOJSON_URL = (
     "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/"
     "master/geojson/ne_110m_admin_0_countries.geojson"
 )
-
-PUBLISHABLE_RIGHTS = {
-    "livre",
-    "permissao_verificada",
-    "uso_autorizado",
-    "aberta_auto",
-    "web_auto",
-}
 
 PAGE_BG = "#F4F1EA"
 PANEL_BG = "#FCFAF6"
@@ -39,6 +41,10 @@ MARKER_BORDER = "#FFF8EF"
 TEXT_COLOR = "#262824"
 MUTED_TEXT = "#666A62"
 OCEAN_COLOR = "#E4EBE7"
+
+# Mantém o HTML do mapa leve mesmo quando a foto original tem vários MB.
+POPUP_IMAGE_MAX_SIZE = (900, 650)
+POPUP_IMAGE_QUALITY = 80
 
 st.set_page_config(
     page_title="Atlas da Arte Pré-Histórica",
@@ -82,12 +88,14 @@ def normalize(value: str) -> str:
 
 @st.cache_data(show_spinner=False)
 def load_database() -> dict[str, Any]:
-    path = RESOLVED_DB if RESOLVED_DB.exists() else DEFAULT_DB
-    with path.open("r", encoding="utf-8") as file:
+    """Carrega apenas o banco principal; não usa mais locais_resolvidos.json."""
+    with DATABASE_PATH.open("r", encoding="utf-8") as file:
         data = json.load(file)
+
     if isinstance(data, list):
         data = {"metadata": {}, "locais": data}
-    data["fonte"] = path.name
+
+    data["fonte"] = DATABASE_PATH.name
     return data
 
 
@@ -96,66 +104,88 @@ def load_world_geojson() -> dict[str, Any]:
     response = requests.get(
         WORLD_GEOJSON_URL,
         timeout=30,
-        headers={"User-Agent": "AtlasArtePreHistorica/2.0"},
+        headers={"User-Agent": "AtlasArtePreHistorica/3.0"},
     )
     response.raise_for_status()
     return response.json()
 
 
-def is_publishable_image(image: dict[str, Any]) -> bool:
-    status = str(image.get("status") or "")
-    rights = str(image.get("direitos") or "")
-    return bool(
-        (image.get("original_url") or image.get("thumbnail_url"))
-        and status.startswith("resolvido")
-        and rights in PUBLISHABLE_RIGHTS
-    )
+def local_image_path(local: dict[str, Any]) -> Path:
+    """Retorna o JPG correspondente ao id do local dentro de data/."""
+    local_id = str(local.get("id") or "").strip()
+    filename = IMAGE_FILE_OVERRIDES.get(local_id, f"{local_id}.jpg")
+    return DATA_DIR / filename
+
+
+def has_local_image(local: dict[str, Any]) -> bool:
+    path = local_image_path(local)
+    return bool(path.is_file() and path.stat().st_size > 0)
+
+
+@st.cache_data(show_spinner=False)
+def image_as_data_uri(path_string: str, modified_ns: int) -> str:
+    """
+    Converte uma foto local em miniatura JPEG incorporada ao HTML.
+
+    modified_ns participa da chave do cache para que uma imagem substituída
+    no GitHub seja recarregada automaticamente após o redeploy.
+    """
+    del modified_ns
+    path = Path(path_string)
+
+    with Image.open(path) as source:
+        image = ImageOps.exif_transpose(source).convert("RGB")
+        image.thumbnail(POPUP_IMAGE_MAX_SIZE, Image.Resampling.LANCZOS)
+
+        buffer = io.BytesIO()
+        image.save(
+            buffer,
+            format="JPEG",
+            quality=POPUP_IMAGE_QUALITY,
+            optimize=True,
+            progressive=True,
+        )
+
+    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+    return f"data:image/jpeg;base64,{encoded}"
 
 
 def image_block(local: dict[str, Any]) -> str:
-    image = local.get("imagem") or {}
-    if not is_publishable_image(image):
+    path = local_image_path(local)
+
+    if not has_local_image(local):
+        expected = html.escape(path.name)
         return (
-            '<div style="height:170px;background:#E9E5DC;display:flex;align-items:center;'
-            'justify-content:center;color:#777268;font-size:12px;margin-bottom:12px;">'
-            "Imagem ainda não resolvida"
+            '<div style="height:190px;background:#E9E5DC;display:flex;align-items:center;'
+            'justify-content:center;color:#777268;font-size:12px;margin-bottom:12px;'
+            'padding:12px;text-align:center;box-sizing:border-box;">'
+            f"Imagem não encontrada: data/{expected}"
             "</div>"
         )
-    url = image.get("thumbnail_url") or image.get("original_url")
-    safe_url = html.escape(str(url), quote=True)
+
+    try:
+        data_uri = image_as_data_uri(str(path), path.stat().st_mtime_ns)
+    except Exception:
+        expected = html.escape(path.name)
+        return (
+            '<div style="height:190px;background:#E9E5DC;display:flex;align-items:center;'
+            'justify-content:center;color:#777268;font-size:12px;margin-bottom:12px;'
+            'padding:12px;text-align:center;box-sizing:border-box;">'
+            f"Não foi possível abrir data/{expected}"
+            "</div>"
+        )
+
+    alt = html.escape(str(local.get("nome") or "Arte pré-histórica"), quote=True)
     return (
-        f'<img src="{safe_url}" alt="Arte do sítio" '
-        'style="display:block;width:100%;height:190px;object-fit:cover;'
+        f'<img src="{data_uri}" alt="{alt}" '
+        'style="display:block;width:100%;height:210px;object-fit:contain;'
         'margin:0 0 12px 0;background:#E9E5DC;">'
     )
 
 
 def popup_html(local: dict[str, Any]) -> str:
-    image = local.get("imagem") or {}
-
     def esc(key: str, default: str = "—") -> str:
         return html.escape(str(local.get(key) or default))
-
-    footer_bits: list[str] = []
-    if is_publishable_image(image):
-        if image.get("autor"):
-            footer_bits.append(f"Foto: {html.escape(str(image['autor']))}")
-        if image.get("licenca"):
-            footer_bits.append(html.escape(str(image["licenca"])))
-        if image.get("page_url"):
-            page_url = html.escape(str(image["page_url"]), quote=True)
-            footer_bits.append(
-                f'<a href="{page_url}" target="_blank" rel="noopener" '
-                'style="color:#6C4939;text-decoration:underline;">Fonte</a>'
-            )
-    if image.get("direitos") == "web_auto":
-        footer_bits.append("Fonte externa · direitos não verificados")
-    footer = " · ".join(footer_bits)
-    footer_html = (
-        '<div style="margin-top:10px;font-size:10px;color:#777268;line-height:1.35;">'
-        f"{footer}</div>"
-        if footer else ""
-    )
 
     observation = local.get("observacao_datacao")
     observation_html = ""
@@ -180,12 +210,14 @@ def popup_html(local: dict[str, Any]) -> str:
         </div>
         <div style="font-size:12px;line-height:1.48;color:#454740;">{esc('descricao_curta')}</div>
         {observation_html}
-        {footer_html}
     </div>
     """
 
 
-def build_map(locais: list[dict[str, Any]], world_geojson: dict[str, Any]) -> folium.Map:
+def build_map(
+    locais: list[dict[str, Any]],
+    world_geojson: dict[str, Any],
+) -> folium.Map:
     world_map = folium.Map(
         location=[13, 5],
         zoom_start=2,
@@ -196,6 +228,7 @@ def build_map(locais: list[dict[str, Any]], world_geojson: dict[str, Any]) -> fo
         zoom_control=True,
         attribution_control=True,
     )
+
     world_map.get_root().header.add_child(
         folium.Element(
             f"""
@@ -210,6 +243,7 @@ def build_map(locais: list[dict[str, Any]], world_geojson: dict[str, Any]) -> fo
             """
         )
     )
+
     folium.GeoJson(
         world_geojson,
         name="Países",
@@ -233,6 +267,7 @@ def build_map(locais: list[dict[str, Any]], world_geojson: dict[str, Any]) -> fo
         lon = local.get("longitude")
         if lat is None or lon is None:
             continue
+
         folium.CircleMarker(
             location=[float(lat), float(lon)],
             radius=5.5,
@@ -241,7 +276,10 @@ def build_map(locais: list[dict[str, Any]], world_geojson: dict[str, Any]) -> fo
             fill=True,
             fill_color=MARKER_COLOR,
             fill_opacity=0.96,
-            tooltip=folium.Tooltip(html.escape(str(local.get("nome", "Local"))), sticky=False),
+            tooltip=folium.Tooltip(
+                html.escape(str(local.get("nome", "Local"))),
+                sticky=False,
+            ),
             popup=folium.Popup(
                 folium.Html(popup_html(local), script=True),
                 max_width=350,
@@ -280,13 +318,15 @@ def apply_filters(locais: list[dict[str, Any]]) -> list[dict[str, Any]]:
     )
 
     normalized_query = normalize(query)
-    filtered = []
+    filtered: list[dict[str, Any]] = []
+
     for item in locais:
         age = int(item.get("antiguidade_referencia_anos") or 0)
         haystack = " ".join(
             str(item.get(field) or "")
             for field in ("nome", "pais_atual", "regiao", "subregiao", "tipo")
         )
+
         if item.get("regiao") not in selected_regions:
             continue
         if item.get("tipo") not in selected_types:
@@ -295,13 +335,24 @@ def apply_filters(locais: list[dict[str, Any]]) -> list[dict[str, Any]]:
             continue
         if normalized_query and normalized_query not in normalize(haystack):
             continue
+
         filtered.append(item)
 
+    missing = [item for item in locais if not has_local_image(item)]
+
     st.sidebar.divider()
+    if missing:
+        st.sidebar.warning(
+            f"{len(missing)} imagem(ns) local(is) não encontrada(s) em data/."
+        )
+    else:
+        st.sidebar.success("42/42 imagens locais encontradas.")
+
     st.sidebar.caption(
-        "O mapa exibe somente imagens previamente resolvidas. "
-        "As datas são aproximadas e podem representar fases diferentes de produção."
+        "As imagens são carregadas diretamente da pasta data/ do projeto. "
+        "Nenhuma busca externa de imagens é feita durante o uso do mapa."
     )
+
     return filtered
 
 
@@ -309,7 +360,10 @@ def main() -> None:
     database = load_database()
     locais = database.get("locais", [])
 
-    st.markdown('<div class="atlas-kicker">Atlas interativo</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="atlas-kicker">Atlas interativo</div>',
+        unsafe_allow_html=True,
+    )
     st.title("Arte pré-histórica pelo mundo")
     st.markdown(
         '<div class="atlas-subtitle">Mapa de sítios selecionados de arte rupestre e outras '
@@ -319,22 +373,28 @@ def main() -> None:
     )
 
     filtered = apply_filters(locais)
-    publishable = sum(1 for item in locais if is_publishable_image(item.get("imagem") or {}))
+    local_image_count = sum(1 for item in locais if has_local_image(item))
 
     col1, col2, col3 = st.columns(3)
+
     with col1:
         st.markdown(
-            f'<div class="atlas-stat"><strong>{len(filtered)}</strong><br><span>locais exibidos</span></div>',
+            f'<div class="atlas-stat"><strong>{len(filtered)}</strong><br>'
+            '<span>locais exibidos</span></div>',
             unsafe_allow_html=True,
         )
+
     with col2:
         st.markdown(
-            f'<div class="atlas-stat"><strong>{len(locais)}</strong><br><span>locais no banco</span></div>',
+            f'<div class="atlas-stat"><strong>{len(locais)}</strong><br>'
+            '<span>locais no banco</span></div>',
             unsafe_allow_html=True,
         )
+
     with col3:
         st.markdown(
-            f'<div class="atlas-stat"><strong>{publishable}/{len(locais)}</strong><br><span>imagens resolvidas</span></div>',
+            f'<div class="atlas-stat"><strong>{local_image_count}/{len(locais)}</strong><br>'
+            '<span>imagens locais</span></div>',
             unsafe_allow_html=True,
         )
 
@@ -345,7 +405,10 @@ def main() -> None:
     try:
         world_geojson = load_world_geojson()
     except Exception as exc:
-        st.error("Não foi possível carregar as fronteiras dos países. Verifique a conexão e tente novamente.")
+        st.error(
+            "Não foi possível carregar as fronteiras dos países. "
+            "Verifique a conexão e tente novamente."
+        )
         st.exception(exc)
         return
 
@@ -360,7 +423,8 @@ def main() -> None:
     st.markdown(
         '<div class="atlas-footnote">Banco utilizado: '
         f'<strong>{html.escape(str(database.get("fonte", "locais.json")))}</strong>. '
-        'As imagens exibidas são somente as registradas no banco local, sem busca automática durante o uso do mapa.</div>',
+        'As fotografias são lidas diretamente dos arquivos JPG presentes em '
+        '<strong>data/</strong> e incorporadas aos popups do mapa.</div>',
         unsafe_allow_html=True,
     )
 
