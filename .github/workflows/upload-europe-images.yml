@@ -1,0 +1,71 @@
+name: Upload imagens Europa
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/upload-europe-images.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  upload-europe-images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Baixar imagens diretamente para data
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p data
+
+          getimg() {
+            out="$1"
+            url="$2"
+            echo "Baixando $out"
+            curl -fL --retry 3 --retry-delay 2 -A 'Mozilla/5.0' "$url" -o "data/$out"
+            file "data/$out"
+            if ! file "data/$out" | grep -qiE 'JPEG image data|PNG image data|WebP image data'; then
+              echo "Arquivo invalido: data/$out"
+              exit 1
+            fi
+          }
+
+          getimg 'chauvet.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Rhinoc%C3%A9ros_grotte_Chauvet.jpg?width=1600'
+          getimg 'lascaux.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Lascaux_painting.jpg?width=1600'
+          getimg 'altamira.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Altamira_ceiling_02.JPG?width=1600'
+          getimg 'coa_valley.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Gravuras_Coa_01_by-dpc.jpg?width=1600'
+          getimg 'valcamonica.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Cervide_R_34_-_Luine_-_Darfo_Boario_Terme_%28Foto_Luca_Giarelli%29.jpg?width=1600'
+          getimg 'pech_merle.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Pech_Merle_main.jpg?width=1600'
+          getimg 'cosquer.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Panneau_des_chevaux_-_Cosquer_M%C3%A9diterran%C3%A9e.jpg?width=1600'
+          getimg 'el_castillo.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Panel_de_manos_de_la_cueva_del_Castillo.jpg?width=1600'
+
+      - name: Commitar imagens
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            data/chauvet.jpg \
+            data/lascaux.jpg \
+            data/altamira.jpg \
+            data/coa_valley.jpg \
+            data/valcamonica.jpg \
+            data/pech_merle.jpg \
+            data/cosquer.jpg \
+            data/el_castillo.jpg
+
+          if git diff --cached --quiet; then
+            echo 'As imagens ja estao atualizadas.'
+            exit 0
+          fi
+
+          git commit -m 'Adiciona imagens dos locais da Europa [skip ci]'
+          git pull --rebase origin main
+          git push origin HEAD:main
