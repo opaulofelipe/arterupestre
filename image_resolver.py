@@ -4,17 +4,19 @@ import argparse
 import html
 import io
 import json
+import math
 import os
 import re
 import sys
 import time
 import unicodedata
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 from urllib.parse import quote
 
 import requests
 from PIL import Image
+from ddgs import DDGS
 
 try:
     import torch
@@ -63,6 +65,11 @@ NEGATIVE_TERMS = {
     "unesco": 4,
     "tourist": 12,
     "tourism": 12,
+    "scenery": 10,
+    "mountain": 6,
+    "desert": 5,
+    "cave exterior": 12,
+    "visitor center": 14,
 }
 
 POSITIVE_TERMS = {
@@ -244,6 +251,16 @@ def commons_license_url(short_name: str | None) -> str | None:
     return mapping.get(key)
 
 
+def score_text_presence(text: str, terms: dict[str, int], factor_on_combined: float = 0.45) -> float:
+    score = 0.0
+    normalized_text = normalize_text(text)
+    for term, weight in terms.items():
+        normalized_term = normalize_text(term)
+        if normalized_term in normalized_text:
+            score += weight * factor_on_combined
+    return score
+
+
 def query_tokens(query: str) -> list[str]:
     tokens = re.findall(r"[a-z0-9]+", normalize_text(query))
     return [token for token in tokens if len(token) >= 3 and token not in STOPWORDS]
@@ -307,19 +324,13 @@ class HttpClient:
             "Accept": "application/json, text/plain;q=0.9, */*;q=0.8",
         })
 
-    def get_json(
-        self,
-        url: str,
-        *,
-        params: dict[str, Any] | None = None,
-        headers: dict[str, str] | None = None,
-    ) -> dict[str, Any]:
+    def get_json(self, url: str, *, params: dict[str, Any] | None = None, headers: dict[str, str] | None = None) -> dict[str, Any]:
         for attempt in range(1, MAX_RETRIES + 1):
             try:
                 resp = self.session.get(url, params=params, timeout=(10, 40), headers=headers)
                 if resp.status_code == 429 or resp.status_code >= 500:
                     if attempt < MAX_RETRIES:
-                        time.sleep(min(2 ** attempt, 8))
+                        time.sleep(min(2**attempt, 8))
                         continue
                 resp.raise_for_status()
                 data = resp.json()
@@ -329,22 +340,16 @@ class HttpClient:
             except Exception:
                 if attempt >= MAX_RETRIES:
                     raise
-                time.sleep(min(2 ** attempt, 8))
+                time.sleep(min(2**attempt, 8))
         raise RuntimeError("Falha HTTP inesperada")
 
-    def get_bytes(
-        self,
-        url: str,
-        *,
-        headers: dict[str, str] | None = None,
-        max_bytes: int = 12_000_000,
-    ) -> bytes | None:
+    def get_bytes(self, url: str, *, headers: dict[str, str] | None = None, max_bytes: int = 12_000_000) -> bytes | None:
         for attempt in range(1, MAX_RETRIES + 1):
             try:
                 resp = self.session.get(url, timeout=(10, 45), headers=headers, stream=True)
                 if resp.status_code == 429 or resp.status_code >= 500:
                     if attempt < MAX_RETRIES:
-                        time.sleep(min(2 ** attempt, 8))
+                        time.sleep(min(2**attempt, 8))
                         continue
                 resp.raise_for_status()
                 total = 0
@@ -362,7 +367,7 @@ class HttpClient:
             except Exception:
                 if attempt >= MAX_RETRIES:
                     return None
-                time.sleep(min(2 ** attempt, 8))
+                time.sleep(min(2**attempt, 8))
         return None
 
 
@@ -475,6 +480,55 @@ class OpenverseSource:
         return results
 
 
+class WebImageSource:
+    """Fallback amplo de imagens da web via DDGS.
+
+    Estes resultados podem não ter licença aberta. O resolvedor registra a
+    página-fonte e marca os direitos como não verificados automaticamente.
+    """
+
+    def __init__(self, candidates: int) -> None:
+        self.candidates = max(1, min(int(candidates), 40))
+
+    def search(self, query: str) -> list[dict[str, Any]]:
+        try:
+            results = DDGS().images(
+                query,
+                region="wt-wt",
+                safesearch="moderate",
+                max_results=self.candidates,
+            ) or []
+        except Exception:
+            return []
+
+        normalized: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for item in results:
+            image_url = item.get("image") or item.get("media") or item.get("src")
+            thumb = item.get("thumbnail") or image_url
+            page_url = item.get("url") or item.get("source") or item.get("page")
+            if not image_url or image_url in seen:
+                continue
+            seen.add(str(image_url))
+            normalized.append({
+                "source_kind": "web",
+                "title": item.get("title") or "Imagem da web",
+                "thumbnail_url": thumb,
+                "original_url": image_url,
+                "page_url": page_url,
+                "width": item.get("width"),
+                "height": item.get("height"),
+                "autor": None,
+                "credito": None,
+                "licenca": None,
+                "licenca_url": None,
+                "description": item.get("title") or None,
+                "source": item.get("source") or "Web",
+                "provider": "ddgs",
+            })
+        return normalized
+
+
 def build_queries(local: dict[str, Any], max_variants: int) -> list[str]:
     image = local.get("imagem") or {}
     primary = (image.get("commons_search") or image.get("openverse_search") or "").strip()
@@ -486,43 +540,47 @@ def build_queries(local: dict[str, Any], max_variants: int) -> list[str]:
     if isinstance(target_prompts, str):
         target_prompts = [target_prompts]
 
-    queries = []
+    queries: list[str] = []
     if primary:
         queries.append(primary)
-    stem = f'"{nome}" {pais}'.strip()
+
     if "petro" in tipo or "gravur" in tipo:
         queries.extend([
-            f"{stem} petroglyph",
-            f"{stem} prehistoric petroglyph rock engraving",
+            f"{nome} petroglyph",
+            f"{nome} rock engraving",
+            f"{nome} {pais} rock art",
+            f"{nome} prehistoric petroglyph",
         ])
-    elif "pint" in tipo or "pict" in tipo:
+    elif "pint" in tipo or "pict" in tipo or "stencil" in tipo:
         queries.extend([
-            f"{stem} rock painting",
-            f"{stem} prehistoric cave painting",
+            f"{nome} rock painting",
+            f"{nome} cave art",
+            f"{nome} {pais} prehistoric painting",
+            f"{nome} prehistoric art",
         ])
     elif "ocre" in tipo or "ochre" in tipo:
         queries.extend([
-            f"{stem} engraved ochre",
-            f"{stem} prehistoric engraved ochre artifact",
-        ])
-    elif "ceram" in tipo or "potter" in tipo:
-        queries.extend([
-            f"{stem} prehistoric ceramic pottery",
-            f"{stem} archaeological pottery artifact",
+            f"{nome} engraved ochre",
+            f"{nome} prehistoric artifact",
+            f"{nome} {pais} archaeology",
         ])
     else:
         queries.extend([
-            f"{stem} rock art",
-            f"{stem} prehistoric art",
+            f"{nome} rock art",
+            f"{nome} prehistoric art",
+            f"{nome} {pais} archaeology",
         ])
+
     for prompt in target_prompts:
         prompt = str(prompt).strip()
         if prompt:
-            queries.append(f"{stem} {prompt}")
+            queries.append(f"{nome} {prompt}")
+    queries.extend([f"{nome} archaeology", nome])
 
-    result = []
-    seen = set()
+    result: list[str] = []
+    seen: set[str] = set()
     for q in queries:
+        q = re.sub(r"\s+", " ", q).strip()
         key = normalize_text(q)
         if q and key not in seen:
             seen.add(key)
@@ -555,6 +613,10 @@ def visual_prompts_for_local(local: dict[str, Any]) -> tuple[list[str], list[str
         "road",
         "empty landscape",
         "person standing in front of cave",
+        "mountain landscape",
+        "desert landscape",
+        "scenic valley",
+        "visitor centre",
     ]
 
     if "petro" in tipo or "gravur" in tipo:
@@ -616,7 +678,8 @@ class ClipRanker:
         if not raw:
             return None
         try:
-            return Image.open(io.BytesIO(raw)).convert("RGB")
+            image = Image.open(io.BytesIO(raw)).convert("RGB")
+            return image
         except Exception:
             return None
 
@@ -627,12 +690,7 @@ class ClipRanker:
             features = features / features.norm(dim=-1, keepdim=True)
         return features
 
-    def rank(
-        self,
-        candidates: list[dict[str, Any]],
-        local: dict[str, Any],
-        max_downloads: int,
-    ) -> list[dict[str, Any]]:
+    def rank(self, candidates: list[dict[str, Any]], local: dict[str, Any], max_downloads: int) -> list[dict[str, Any]]:
         if not candidates:
             return candidates
         positives, negatives = visual_prompts_for_local(local)
@@ -655,10 +713,7 @@ class ClipRanker:
                 neg = float(neg_scores.max().item())
                 mean_pos = float(pos_scores.mean().item())
                 mean_neg = float(neg_scores.mean().item())
-                item["clip_score"] = round(
-                    (0.65 * pos + 0.35 * mean_pos) - (0.60 * neg + 0.40 * mean_neg),
-                    3,
-                )
+                item["clip_score"] = round((0.65 * pos + 0.35 * mean_pos) - (0.60 * neg + 0.40 * mean_neg), 3)
                 item["clip_positive_max"] = round(pos, 3)
                 item["clip_negative_max"] = round(neg, 3)
         for item in candidates[max_downloads:]:
@@ -678,30 +733,41 @@ def merged_candidates_for_local(
     queries: list[str],
     openverse: OpenverseSource,
     commons: CommonsSource,
+    web_source: WebImageSource,
 ) -> list[dict[str, Any]]:
-    merged = []
-    seen_urls = set()
-    for query in queries:
-        commons_items = commons.search(query)
-        openverse_items = openverse.search(query)
-        combined = []
-        for idx, item in enumerate(openverse_items):
-            item = dict(item)
+    merged: list[dict[str, Any]] = []
+    seen_urls: set[str] = set()
+
+    def add_items(items: list[dict[str, Any]], query: str) -> None:
+        for idx, raw in enumerate(items):
+            item = dict(raw)
             item["query_used"] = query
             item["text_score"] = base_text_score(item, query, idx)
-            combined.append(item)
-        for idx, item in enumerate(commons_items):
-            item = dict(item)
-            item["query_used"] = query
-            item["text_score"] = base_text_score(item, query, idx)
-            combined.append(item)
-        combined.sort(key=lambda x: float(x.get("text_score") or -9999), reverse=True)
-        for item in combined:
             key = item.get("original_url") or item.get("thumbnail_url") or item.get("page_url")
-            if not key or key in seen_urls:
+            if not key or str(key) in seen_urls:
                 continue
-            seen_urls.add(key)
+            seen_urls.add(str(key))
             merged.append(item)
+
+    for query in queries:
+        try:
+            add_items(openverse.search(query), query)
+        except Exception:
+            pass
+        try:
+            add_items(commons.search(query), query)
+        except Exception:
+            pass
+
+    if len(merged) < 8:
+        for query in queries:
+            try:
+                add_items(web_source.search(query), query)
+            except Exception:
+                pass
+            if len(merged) >= 24:
+                break
+
     merged.sort(key=lambda x: float(x.get("text_score") or -9999), reverse=True)
     return merged
 
@@ -713,15 +779,11 @@ def image_is_resolved(local: dict[str, Any]) -> bool:
     return bool(
         (image.get("thumbnail_url") or image.get("original_url"))
         and status.startswith("resolvido")
-        and rights in {"livre", "permissao_verificada", "uso_autorizado", "aberta_auto"}
+        and rights in {"livre", "permissao_verificada", "uso_autorizado", "aberta_auto", "web_auto"}
     )
 
 
-def merge_image_data(
-    local: dict[str, Any],
-    selected: dict[str, Any],
-    rights: str = "aberta_auto",
-) -> None:
+def merge_image_data(local: dict[str, Any], selected: dict[str, Any], rights: str = "aberta_auto") -> None:
     image = local.setdefault("imagem", {})
     preserved = {
         "commons_search": image.get("commons_search"),
@@ -759,6 +821,7 @@ def resolve_one(
     use_cache: bool,
     openverse: OpenverseSource,
     commons: CommonsSource,
+    web_source: WebImageSource,
     clip_ranker: ClipRanker | None,
     query_variants: int,
     max_download_candidates: int,
@@ -780,7 +843,7 @@ def resolve_one(
             candidates = [dict(item) for item in cached]
 
     if not candidates:
-        candidates = merged_candidates_for_local(local, queries, openverse, commons)
+        candidates = merged_candidates_for_local(local, queries, openverse, commons, web_source)
         if use_cache:
             cache[cache_key] = candidates
 
@@ -797,7 +860,7 @@ def resolve_one(
             print(f"  Aviso: falha no OpenCLIP para {local.get('nome')}: {exc}")
 
     selected = candidates[0]
-    rights = "aberta_auto" if selected.get("licenca") or selected.get("licenca_url") else "nao_verificado"
+    rights = "aberta_auto" if selected.get("licenca") or selected.get("licenca_url") else ("web_auto" if selected.get("source_kind") == "web" else "nao_verificado")
     merge_image_data(local, selected, rights=rights)
     return "resolvido_automaticamente"
 
@@ -834,10 +897,7 @@ def main() -> int:
     else:
         locais = None
     if not isinstance(locais, list):
-        print(
-            "Erro: o JSON precisa conter uma lista em 'locais' ou ser uma lista na raiz.",
-            file=sys.stderr,
-        )
+        print("Erro: o JSON precisa conter uma lista em 'locais' ou ser uma lista na raiz.", file=sys.stderr)
         return 2
 
     cache_path = args.cache.expanduser().resolve()
@@ -847,6 +907,7 @@ def main() -> int:
     http_client = HttpClient(ua, delay=args.delay)
     openverse = OpenverseSource(http_client, args.candidates)
     commons = CommonsSource(http_client, args.thumb_width, args.candidates)
+    web_source = WebImageSource(max(args.candidates, 20))
     clip_ranker = None
     if not args.disable_clip:
         try:
@@ -879,6 +940,7 @@ def main() -> int:
                     use_cache=not args.no_cache,
                     openverse=openverse,
                     commons=commons,
+                    web_source=web_source,
                     clip_ranker=clip_ranker,
                     query_variants=args.query_variants,
                     max_download_candidates=args.download_candidates,
@@ -916,13 +978,13 @@ def main() -> int:
     metadata = database.setdefault("metadata", {})
     metadata["arquivo_imagens_resolvido"] = True
     metadata["resolucao_imagens"] = {
-        "servicos": ["Openverse", "Wikimedia Commons"],
+        "servicos": ["Openverse", "Wikimedia Commons", "Busca web via DDGS"],
         "modo": "automatico_multimodal",
         "clip": "OpenCLIP" if clip_ranker is not None else "desativado",
         "miniatura_largura_px": args.thumb_width,
         "observacao": (
-            "A seleção automática privilegia imagens abertas e similares visualmente ao tipo de vestígio. "
-            "Ainda assim, uma revisão pontual continua recomendável para os casos mais raros."
+            "A seleção automática privilegia primeiro fontes abertas e usa busca web geral como fallback. "
+            "Resultados da web sem licença conhecida são marcados como web_auto e mantêm o link da fonte."
         ),
     }
 
