@@ -1,4 +1,4 @@
-name: Upload imagens Americas
+name: Upload imagem Monte Alegre
 
 on:
   push:
@@ -12,70 +12,37 @@ permissions:
   contents: write
 
 jobs:
-  upload-americas-images:
+  upload-monte-alegre:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Baixar imagens diretamente para data
+      - name: Baixar imagem de Monte Alegre diretamente para data
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p data
+          curl -fL --retry 3 --retry-delay 2 -A 'Mozilla/5.0' \
+            'https://wmf.imgix.net/images/bc_8_-_monte_alegre_img_8290.jpg?fm=jpg&w=1600' \
+            -o data/pedra_pintada_monte_alegre.jpg
+          file data/pedra_pintada_monte_alegre.jpg
+          if ! file data/pedra_pintada_monte_alegre.jpg | grep -qiE 'JPEG image data|PNG image data|WebP image data'; then
+            echo 'Arquivo invalido: data/pedra_pintada_monte_alegre.jpg'
+            exit 1
+          fi
 
-          getimg() {
-            out="$1"
-            url="$2"
-            echo "Baixando $out"
-            curl -fL --retry 3 --retry-delay 2 -A 'Mozilla/5.0' "$url" -o "data/$out"
-            file "data/$out"
-            if ! file "data/$out" | grep -qiE 'JPEG image data|PNG image data|WebP image data'; then
-              echo "Arquivo invalido: data/$out"
-              exit 1
-            fi
-          }
-
-          getimg 'serra_da_capivara.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Pinturas_rupestres_serra_da_capivara.jpg?width=1600'
-          getimg 'vale_do_peruacu.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Pinturas_Rupestres_2.jpg?width=1600'
-          getimg 'cueva_de_las_manos.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Cueva_de_las_Manos_%286811931046%29.jpg?width=1600'
-          getimg 'chiribiquete.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Chiribiquete_petroglyph_3.jpg?width=1600'
-          getimg 'toquepala.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Toquepala_Caves_1.jpg?width=1600'
-          getimg 'lower_pecos.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Seminole_Canyon_Park5.JPG?width=1600'
-          getimg 'coso_range.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Coso_petroglyphs_%285%29.JPG?width=1600'
-          getimg 'horseshoe_canyon_great_gallery.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Great_Gallery_Detail_Horseshoe_Canyon%29_%287167160112%29.jpg?width=1600'
-          getimg 'writing_on_stone.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Writing_on_Stone_2025-07-19.jpg?width=1600'
-          getimg 'sierra_de_san_francisco.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Pintura_rupestre_de_Baja_California.jpg?width=1600'
-          getimg 'ometepe.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Petroglifo_Ometepe.jpg?width=1600'
-          getimg 'piedra_pintada_panama.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Petroglifos_en_Panam%C3%A1.jpg?width=1600'
-          getimg 'cuevas_del_pomier.jpg' 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Pictografia_cohoba.jpg?width=1600'
-
-      - name: Commitar imagens
+      - name: Commitar imagem
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add \
-            data/serra_da_capivara.jpg \
-            data/vale_do_peruacu.jpg \
-            data/cueva_de_las_manos.jpg \
-            data/chiribiquete.jpg \
-            data/toquepala.jpg \
-            data/lower_pecos.jpg \
-            data/coso_range.jpg \
-            data/horseshoe_canyon_great_gallery.jpg \
-            data/writing_on_stone.jpg \
-            data/sierra_de_san_francisco.jpg \
-            data/ometepe.jpg \
-            data/piedra_pintada_panama.jpg \
-            data/cuevas_del_pomier.jpg
-
+          git add data/pedra_pintada_monte_alegre.jpg
           if git diff --cached --quiet; then
-            echo 'As imagens ja estao atualizadas.'
+            echo 'A imagem ja esta atualizada.'
             exit 0
           fi
-
-          git commit -m 'Adiciona 13 imagens dos locais das Americas [skip ci]'
+          git commit -m 'Adiciona imagem de Monte Alegre [skip ci]'
           git pull --rebase origin main
           git push origin HEAD:main
