@@ -1,0 +1,99 @@
+name: Upload imagens Africa
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/upload-africa-images.yml
+
+permissions:
+  contents: write
+
+jobs:
+  upload-africa-images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Baixar imagens africanas diretamente para data
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p data
+
+          curl -fL --retry 3 --retry-delay 2 \
+            'https://commons.wikimedia.org/wiki/Special:Redirect/file/Blombo.jpg?width=1200' \
+            -o data/blombos_cave.jpg
+
+          curl -fL --retry 3 --retry-delay 2 \
+            'https://commons.wikimedia.org/wiki/Special:Redirect/file/Apollo%2011%20Cave%20painting%201.jpg?width=1200' \
+            -o data/apollo_11_cave.jpg
+
+          curl -fL --retry 3 --retry-delay 2 \
+            'https://news.yale.edu/sites/default/files/styles/tease_image/public/d6_files/09-Qurta_Antiquity_Press_Photo_13.jpg?h=f2329d93&itok=pFuvfvh9' \
+            -o data/qurta.jpg
+
+          curl -fL --retry 3 --retry-delay 2 \
+            'https://commons.wikimedia.org/wiki/Special:Redirect/file/Running_Horned_Woman%2C_6%2C000%E2%80%934%2C000_B.C.E.%2C_pigment_on_rock%2C_Tassili_n%E2%80%99Ajjer%2C_Algeria.jpg?width=1200' \
+            -o data/tassili_n_ajjer.jpg
+
+          curl -fL --retry 3 --retry-delay 2 \
+            'https://commons.wikimedia.org/wiki/Special:Redirect/file/Tadrart%20Acacus%201.jpg?width=1200' \
+            -o data/tadrart_acacus.jpg
+
+          curl -fL --retry 3 --retry-delay 2 \
+            'https://commons.wikimedia.org/wiki/Special:Redirect/file/Laas%20Geel.jpg?width=1200' \
+            -o data/laas_geel.jpg
+
+          curl -fL --retry 3 --retry-delay 2 \
+            'https://commons.wikimedia.org/wiki/Special:Redirect/file/Tsodilo%20Hills%20rock%20paintings1.jpg?width=1200' \
+            -o data/tsodilo_hills.jpg
+
+          curl -fL --retry 3 --retry-delay 2 \
+            'https://commons.wikimedia.org/wiki/Special:Redirect/file/DabousGiraffe.jpg?width=1200' \
+            -o data/dabous.jpg
+
+          for f in \
+            data/blombos_cave.jpg \
+            data/apollo_11_cave.jpg \
+            data/qurta.jpg \
+            data/tassili_n_ajjer.jpg \
+            data/tadrart_acacus.jpg \
+            data/laas_geel.jpg \
+            data/tsodilo_hills.jpg \
+            data/dabous.jpg; do
+            echo "Verificando $f"
+            file "$f"
+            if ! file "$f" | grep -qiE 'JPEG image data|PNG image data'; then
+              echo "Arquivo invalido: $f"
+              exit 1
+            fi
+          done
+
+      - name: Commitar imagens
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            data/blombos_cave.jpg \
+            data/apollo_11_cave.jpg \
+            data/qurta.jpg \
+            data/tassili_n_ajjer.jpg \
+            data/tadrart_acacus.jpg \
+            data/laas_geel.jpg \
+            data/tsodilo_hills.jpg \
+            data/dabous.jpg
+
+          if git diff --cached --quiet; then
+            echo 'As imagens ja estao atualizadas.'
+            exit 0
+          fi
+
+          git commit -m 'Adiciona imagens africanas ao banco local'
+          git pull --rebase origin main
+          git push origin HEAD:main
