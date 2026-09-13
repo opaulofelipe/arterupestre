@@ -22,7 +22,12 @@ WORLD_GEOJSON_URL = (
     "master/geojson/ne_110m_admin_0_countries.geojson"
 )
 
-PUBLISHABLE_RIGHTS = {"livre", "permissao_verificada", "uso_autorizado"}
+PUBLISHABLE_RIGHTS = {
+    "livre",
+    "permissao_verificada",
+    "uso_autorizado",
+    "aberta_auto",
+}
 
 PAGE_BG = "#F4F1EA"
 PANEL_BG = "#FCFAF6"
@@ -53,7 +58,9 @@ st.markdown(
             color: {MUTED_TEXT}; font-size: .82rem; text-transform: uppercase;
             letter-spacing: .12em; font-weight: 700; margin-bottom: .25rem;
         }}
-        .atlas-subtitle {{ color: {MUTED_TEXT}; max-width: 850px; line-height: 1.55; margin-top: -.35rem; }}
+        .atlas-subtitle {{
+            color: {MUTED_TEXT}; max-width: 850px; line-height: 1.55; margin-top: -.35rem;
+        }}
         .atlas-stat {{
             background: {PANEL_BG}; border: 1px solid rgba(38,40,36,.10);
             padding: .75rem .9rem; border-radius: 0;
@@ -88,17 +95,19 @@ def load_world_geojson() -> dict[str, Any]:
     response = requests.get(
         WORLD_GEOJSON_URL,
         timeout=30,
-        headers={"User-Agent": "AtlasArtePreHistorica/1.0"},
+        headers={"User-Agent": "AtlasArtePreHistorica/2.0"},
     )
     response.raise_for_status()
     return response.json()
 
 
 def is_publishable_image(image: dict[str, Any]) -> bool:
+    status = str(image.get("status") or "")
+    rights = str(image.get("direitos") or "")
     return bool(
-        image.get("original_url")
-        and image.get("status") == "resolvido_curado"
-        and image.get("direitos") in PUBLISHABLE_RIGHTS
+        (image.get("original_url") or image.get("thumbnail_url"))
+        and status.startswith("resolvido")
+        and rights in PUBLISHABLE_RIGHTS
     )
 
 
@@ -108,10 +117,9 @@ def image_block(local: dict[str, Any]) -> str:
         return (
             '<div style="height:170px;background:#E9E5DC;display:flex;align-items:center;'
             'justify-content:center;color:#777268;font-size:12px;margin-bottom:12px;">'
-            "Imagem em curadoria"
+            "Imagem ainda não resolvida"
             "</div>"
         )
-
     url = image.get("thumbnail_url") or image.get("original_url")
     safe_url = html.escape(str(url), quote=True)
     return (
@@ -139,10 +147,10 @@ def popup_html(local: dict[str, Any]) -> str:
                 f'<a href="{page_url}" target="_blank" rel="noopener" '
                 'style="color:#6C4939;text-decoration:underline;">Fonte</a>'
             )
-
     footer = " · ".join(footer_bits)
     footer_html = (
-        f'<div style="margin-top:10px;font-size:10px;color:#777268;line-height:1.35;">{footer}</div>'
+        '<div style="margin-top:10px;font-size:10px;color:#777268;line-height:1.35;">'
+        f"{footer}</div>"
         if footer else ""
     )
 
@@ -161,8 +169,12 @@ def popup_html(local: dict[str, Any]) -> str:
         {image_block(local)}
         <div style="font-size:18px;font-weight:700;line-height:1.15;margin-bottom:4px;">{esc('nome')}</div>
         <div style="font-size:12px;color:#6B6C65;margin-bottom:11px;">{esc('pais_atual')}</div>
-        <div style="font-size:12px;line-height:1.45;margin-bottom:7px;"><strong>Datação:</strong> {esc('idade_aproximada')}</div>
-        <div style="font-size:12px;line-height:1.45;margin-bottom:7px;"><strong>Tipo:</strong> {esc('tipo')}</div>
+        <div style="font-size:12px;line-height:1.45;margin-bottom:7px;">
+            <strong>Datação:</strong> {esc('idade_aproximada')}
+        </div>
+        <div style="font-size:12px;line-height:1.45;margin-bottom:7px;">
+            <strong>Tipo:</strong> {esc('tipo')}
+        </div>
         <div style="font-size:12px;line-height:1.48;color:#454740;">{esc('descricao_curta')}</div>
         {observation_html}
         {footer_html}
@@ -172,33 +184,43 @@ def popup_html(local: dict[str, Any]) -> str:
 
 def build_map(locais: list[dict[str, Any]], world_geojson: dict[str, Any]) -> folium.Map:
     world_map = folium.Map(
-        location=[13, 5], zoom_start=2, min_zoom=2, max_zoom=8,
-        tiles=None, prefer_canvas=True, zoom_control=True, attribution_control=True,
+        location=[13, 5],
+        zoom_start=2,
+        min_zoom=2,
+        max_zoom=8,
+        tiles=None,
+        prefer_canvas=True,
+        zoom_control=True,
+        attribution_control=True,
     )
-
     world_map.get_root().header.add_child(
         folium.Element(
             f"""
             <style>
                 .leaflet-container {{ background: {OCEAN_COLOR} !important; }}
                 .leaflet-control-zoom a {{ border-radius:0 !important; color:#3B3D38 !important; }}
-                .leaflet-popup-content-wrapper, .leaflet-popup-tip {{ background:{PANEL_BG}; border-radius:0 !important; }}
+                .leaflet-popup-content-wrapper, .leaflet-popup-tip {{
+                    background:{PANEL_BG}; border-radius:0 !important;
+                }}
                 .leaflet-popup-content {{ margin:14px !important; }}
             </style>
             """
         )
     )
-
     folium.GeoJson(
         world_geojson,
         name="Países",
         style_function=lambda _feature: {
-            "fillColor": LAND_COLOR, "color": COUNTRY_BORDER,
-            "weight": 0.75, "fillOpacity": 1,
+            "fillColor": LAND_COLOR,
+            "color": COUNTRY_BORDER,
+            "weight": 0.75,
+            "fillOpacity": 1,
         },
         highlight_function=lambda _feature: {
-            "fillColor": LAND_COLOR, "color": COUNTRY_BORDER,
-            "weight": 0.75, "fillOpacity": 1,
+            "fillColor": LAND_COLOR,
+            "color": COUNTRY_BORDER,
+            "weight": 0.75,
+            "fillOpacity": 1,
         },
         smooth_factor=0.7,
     ).add_to(world_map)
@@ -208,7 +230,6 @@ def build_map(locais: list[dict[str, Any]], world_geojson: dict[str, Any]) -> fo
         lon = local.get("longitude")
         if lat is None or lon is None:
             continue
-
         folium.CircleMarker(
             location=[float(lat), float(lon)],
             radius=5.5,
@@ -226,9 +247,12 @@ def build_map(locais: list[dict[str, Any]], world_geojson: dict[str, Any]) -> fo
         ).add_to(world_map)
 
     Fullscreen(
-        position="topright", title="Tela cheia",
-        title_cancel="Sair da tela cheia", force_separate_button=True,
+        position="topright",
+        title="Tela cheia",
+        title_cancel="Sair da tela cheia",
+        force_separate_button=True,
     ).add_to(world_map)
+
     world_map.fit_bounds([[-57, -178], [82, 178]])
     return world_map
 
@@ -244,11 +268,16 @@ def apply_filters(locais: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
     max_age = max(int(item.get("antiguidade_referencia_anos") or 0) for item in locais)
     age_limit = st.sidebar.slider(
-        "Antiguidade de referência (anos)", 0, max_age, (0, max_age), step=500,
+        "Antiguidade de referência (anos)",
+        0,
+        max_age,
+        (0, max_age),
+        step=500,
+        help="Filtro auxiliar. A datação exibida no popup é mais completa e pode ter incertezas.",
     )
 
     normalized_query = normalize(query)
-    filtered: list[dict[str, Any]] = []
+    filtered = []
     for item in locais:
         age = int(item.get("antiguidade_referencia_anos") or 0)
         haystack = " ".join(
@@ -264,6 +293,12 @@ def apply_filters(locais: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if normalized_query and normalized_query not in normalize(haystack):
             continue
         filtered.append(item)
+
+    st.sidebar.divider()
+    st.sidebar.caption(
+        "O mapa exibe somente imagens previamente resolvidas. "
+        "As datas são aproximadas e podem representar fases diferentes de produção."
+    )
     return filtered
 
 
@@ -275,7 +310,8 @@ def main() -> None:
     st.title("Arte pré-histórica pelo mundo")
     st.markdown(
         '<div class="atlas-subtitle">Mapa de sítios selecionados de arte rupestre e outras '
-        'formas de expressão visual pré-histórica.</div>',
+        'formas de expressão visual pré-histórica. O mapa-base exibe somente os territórios '
+        'e suas divisas, sem nomes geográficos.</div>',
         unsafe_allow_html=True,
     )
 
@@ -284,11 +320,20 @@ def main() -> None:
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.markdown(f'<div class="atlas-stat"><strong>{len(filtered)}</strong><br><span>locais exibidos</span></div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="atlas-stat"><strong>{len(filtered)}</strong><br><span>locais exibidos</span></div>',
+            unsafe_allow_html=True,
+        )
     with col2:
-        st.markdown(f'<div class="atlas-stat"><strong>{len(locais)}</strong><br><span>locais no banco</span></div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="atlas-stat"><strong>{len(locais)}</strong><br><span>locais no banco</span></div>',
+            unsafe_allow_html=True,
+        )
     with col3:
-        st.markdown(f'<div class="atlas-stat"><strong>{publishable}/{len(locais)}</strong><br><span>imagens curadas</span></div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="atlas-stat"><strong>{publishable}/{len(locais)}</strong><br><span>imagens resolvidas</span></div>',
+            unsafe_allow_html=True,
+        )
 
     if not filtered:
         st.warning("Nenhum local corresponde aos filtros atuais.")
@@ -297,7 +342,7 @@ def main() -> None:
     try:
         world_geojson = load_world_geojson()
     except Exception as exc:
-        st.error("Não foi possível carregar as fronteiras dos países.")
+        st.error("Não foi possível carregar as fronteiras dos países. Verifique a conexão e tente novamente.")
         st.exception(exc)
         return
 
@@ -310,10 +355,9 @@ def main() -> None:
     )
 
     st.markdown(
-        '<div class="atlas-footnote">'
-        f'Banco utilizado: <strong>{html.escape(str(database.get("fonte", "locais.json")))}</strong>. '
-        'As imagens exibidas são somente as marcadas como curadas e publicáveis.'
-        '</div>',
+        '<div class="atlas-footnote">Banco utilizado: '
+        f'<strong>{html.escape(str(database.get("fonte", "locais.json")))}</strong>. '
+        'As imagens exibidas são somente as registradas no banco local, sem busca automática durante o uso do mapa.</div>',
         unsafe_allow_html=True,
     )
 
