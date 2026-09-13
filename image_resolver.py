@@ -1,46 +1,8 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-"""
-image_resolver.py
-=================
-
-Resolve imagens para os locais de ``locais.json`` usando o Wikimedia Commons.
-
-O script:
-- lê o JSON de locais;
-- respeita ``commons_file`` quando uma imagem já foi escolhida manualmente;
-- pesquisa ``commons_search`` quando ainda não existe arquivo escolhido;
-- obtém miniatura, URL original, página do Commons, autor e licença;
-- pontua candidatos para reduzir mapas, logos, fachadas e paisagens;
-- usa cache local para evitar chamadas repetidas;
-- preserva o arquivo original por padrão, gerando ``locais_resolvidos.json``;
-- permite curadoria interativa pelo terminal;
-- salva progresso após cada local para não perder trabalho.
-
-Dependência:
-    pip install requests
-
-Uso recomendado:
-    python image_resolver.py --contact "https://github.com/SEU_USUARIO/SEU_REPOSITORIO"
-
-Exemplo com pastas:
-    python image_resolver.py --input data/locais.json --output data/locais_resolvidos.json \
-        --contact "https://github.com/SEU_USUARIO/SEU_REPOSITORIO"
-
-Modo de curadoria:
-    python image_resolver.py --interactive \
-        --contact "https://github.com/SEU_USUARIO/SEU_REPOSITORIO"
-
-Importante:
-A seleção automática ajuda, mas não substitui uma revisão humana. Em projetos
-históricos, confira se a imagem realmente corresponde ao sítio e ao vestígio.
-"""
-
 from __future__ import annotations
 
 import argparse
 import html
+import io
 import json
 import os
 import re
@@ -48,35 +10,38 @@ import sys
 import time
 import unicodedata
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any
 from urllib.parse import quote
 
-try:
-    import requests
-except ImportError:
-    print(
-        "Erro: a biblioteca 'requests' não está instalada.\n"
-        "Instale com:\n\n"
-        "    pip install requests\n",
-        file=sys.stderr,
-    )
-    raise SystemExit(1)
+import requests
+from PIL import Image
 
+try:
+    import torch
+    import open_clip
+except ImportError:
+    torch = None
+    open_clip = None
 
 COMMONS_API = "https://commons.wikimedia.org/w/api.php"
+OPENVERSE_API = "https://api.openverse.org/v1/images/"
 DEFAULT_THUMB_WIDTH = 900
-DEFAULT_CANDIDATES = 8
-DEFAULT_DELAY = 0.25
+DEFAULT_DELAY = 0.2
 MAX_RETRIES = 4
+DEFAULT_CANDIDATES = 20
+DEFAULT_DOWNLOAD_CANDIDATES = 10
+DEFAULT_QUERY_VARIANTS = 5
+DEFAULT_CLIP_MODEL = "ViT-B-32"
+DEFAULT_CLIP_PRETRAINED = "laion2b_s34b_b79k"
 
 NEGATIVE_TERMS = {
-    "map": 18,
+    "map": 16,
     "locator": 22,
     "location": 10,
     "flag": 20,
     "logo": 20,
     "icon": 16,
-    "diagram": 10,
+    "diagram": 12,
     "scheme": 10,
     "plan": 8,
     "museum": 7,
@@ -88,13 +53,16 @@ NEGATIVE_TERMS = {
     "parking": 10,
     "panorama": 8,
     "landscape": 6,
-    "aerial": 7,
+    "aerial": 8,
     "satellite": 18,
     "reconstruction": 10,
     "replica": 12,
-    "facsimile": 8,
-    "stamp": 12,
-    "coin": 12,
+    "facsimile": 10,
+    "building": 10,
+    "exterior": 8,
+    "unesco": 4,
+    "tourist": 12,
+    "tourism": 12,
 }
 
 POSITIVE_TERMS = {
@@ -123,74 +91,55 @@ POSITIVE_TERMS = {
     "neolithic": 6,
     "artifact": 7,
     "artefact": 7,
+    "ceramic": 8,
+    "pottery": 8,
 }
 
 STOPWORDS = {
     "a", "an", "and", "art", "cave", "da", "das", "de", "del", "do", "dos",
     "e", "el", "en", "et", "la", "las", "le", "les", "of", "rock", "the",
-    "prehistoric", "painting", "paintings", "petroglyph", "petroglyphs",
+    "prehistoric", "painting", "paintings", "petroglyph", "petroglyphs", "arte",
 }
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Resolve imagens do Wikimedia Commons para os locais do JSON."
+        description=(
+            "Resolve imagens de arte pré-histórica usando Openverse + Wikimedia Commons + OpenCLIP. "
+            "O script escolhe automaticamente a candidata mais adequada e grava locais_resolvidos.json."
+        )
+    )
+    parser.add_argument("--input", "-i", type=Path, help="Arquivo JSON de entrada.")
+    parser.add_argument("--output", "-o", type=Path, help="Arquivo JSON de saída.")
+    parser.add_argument("--in-place", action="store_true", help="Atualiza o próprio arquivo de entrada.")
+    parser.add_argument(
+        "--contact",
+        default=os.getenv("WIKIMEDIA_CONTACT") or "https://github.com/opaulofelipe/arterupestre",
+        help="Contato/URL para o User-Agent usado nas APIs.",
+    )
+    parser.add_argument("--overwrite", action="store_true", help="Refaz locais já resolvidos.")
+    parser.add_argument("--limit", type=int, default=None, help="Processa no máximo N locais.")
+    parser.add_argument("--cache", type=Path, default=Path("cache") / "resolver_cache.json")
+    parser.add_argument("--no-cache", action="store_true")
+    parser.add_argument("--thumb-width", type=int, default=DEFAULT_THUMB_WIDTH)
+    parser.add_argument("--delay", type=float, default=DEFAULT_DELAY)
+    parser.add_argument("--candidates", type=int, default=DEFAULT_CANDIDATES)
+    parser.add_argument("--download-candidates", type=int, default=DEFAULT_DOWNLOAD_CANDIDATES)
+    parser.add_argument("--query-variants", type=int, default=DEFAULT_QUERY_VARIANTS)
+    parser.add_argument(
+        "--disable-clip",
+        action="store_true",
+        help="Desliga a análise visual com OpenCLIP e usa apenas pontuação textual.",
     )
     parser.add_argument(
-        "--input", "-i", type=Path,
-        help="Arquivo JSON de entrada. Se omitido, procura data/locais.json e locais.json.",
-    )
-    parser.add_argument(
-        "--output", "-o", type=Path,
-        help="Arquivo de saída. Padrão: locais_resolvidos.json ao lado do arquivo de entrada.",
-    )
-    parser.add_argument(
-        "--in-place", action="store_true",
-        help="Atualiza o próprio arquivo de entrada.",
-    )
-    parser.add_argument(
-        "--contact", default=os.getenv("WIKIMEDIA_CONTACT"),
-        help=(
-            "Contato para o User-Agent exigido pela Wikimedia. "
-            "Ex.: URL do repositório, página pessoal ou mailto:email."
-        ),
-    )
-    parser.add_argument(
-        "--interactive", action="store_true",
-        help="Mostra os candidatos e pede uma escolha manual para cada local.",
-    )
-    parser.add_argument(
-        "--overwrite", action="store_true",
-        help="Refaz locais que já estejam com status resolvido.",
-    )
-    parser.add_argument(
-        "--limit", type=int, default=None,
-        help="Processa no máximo N locais; útil para testes.",
-    )
-    parser.add_argument(
-        "--candidates", type=int, default=DEFAULT_CANDIDATES,
-        help=f"Quantidade de candidatos por busca (padrão: {DEFAULT_CANDIDATES}).",
-    )
-    parser.add_argument(
-        "--thumb-width", type=int, default=DEFAULT_THUMB_WIDTH,
-        help=f"Largura da miniatura em pixels (padrão: {DEFAULT_THUMB_WIDTH}).",
-    )
-    parser.add_argument(
-        "--delay", type=float, default=DEFAULT_DELAY,
-        help=f"Pausa entre chamadas à API em segundos (padrão: {DEFAULT_DELAY}).",
-    )
-    parser.add_argument(
-        "--cache", type=Path, default=Path("cache") / "imagens.json",
-        help="Arquivo de cache (padrão: cache/imagens.json).",
-    )
-    parser.add_argument(
-        "--no-cache", action="store_true",
-        help="Não lê nem grava cache.",
+        "--device",
+        default=None,
+        help="Dispositivo do OpenCLIP (ex.: cpu, cuda). O padrão escolhe automaticamente.",
     )
     return parser.parse_args()
 
 
-def locate_input(explicit: Optional[Path]) -> Path:
+def locate_input(explicit: Path | None) -> Path:
     if explicit:
         path = explicit.expanduser().resolve()
         if not path.exists():
@@ -204,19 +153,38 @@ def locate_input(explicit: Optional[Path]) -> Path:
         script_dir / "data" / "locais.json",
         script_dir / "locais.json",
     ]
-
-    seen = set()
     for candidate in candidates:
         candidate = candidate.resolve()
-        if candidate in seen:
-            continue
-        seen.add(candidate)
         if candidate.exists():
             return candidate
+    raise FileNotFoundError("Não encontrei locais.json. Use --input CAMINHO/locais.json")
 
-    raise FileNotFoundError(
-        "Não encontrei 'locais.json'. Use --input CAMINHO/locais.json."
-    )
+
+def atomic_write_json(path: Path, payload: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.replace(path)
+
+
+def load_json(path: Path) -> Any:
+    with path.open("r", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def load_cache(path: Path, disabled: bool) -> dict[str, Any]:
+    if disabled or not path.exists():
+        return {}
+    try:
+        data = load_json(path)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def save_cache(path: Path, cache: dict[str, Any], disabled: bool) -> None:
+    if not disabled:
+        atomic_write_json(path, cache)
 
 
 def normalize_text(value: str) -> str:
@@ -238,7 +206,7 @@ def strip_html(value: Any) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
-def ext_value(extmetadata: Dict[str, Any], key: str) -> str:
+def ext_value(extmetadata: dict[str, Any], key: str) -> str:
     item = extmetadata.get(key, {})
     if isinstance(item, dict):
         return strip_html(item.get("value", ""))
@@ -259,213 +227,63 @@ def commons_page_url(file_title: str) -> str:
     return "https://commons.wikimedia.org/wiki/" + quote(title, safe=":()'_,.-")
 
 
-def atomic_write_json(path: Path, payload: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-    tmp.replace(path)
+def commons_license_url(short_name: str | None) -> str | None:
+    if not short_name:
+        return None
+    key = short_name.lower().strip()
+    mapping = {
+        "cc0": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "cc by": "https://creativecommons.org/licenses/by/4.0/",
+        "cc-by": "https://creativecommons.org/licenses/by/4.0/",
+        "cc by-sa": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "cc-by-sa": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "by": "https://creativecommons.org/licenses/by/4.0/",
+        "by-sa": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "pdm": "https://creativecommons.org/publicdomain/mark/1.0/",
+    }
+    return mapping.get(key)
 
 
-def load_json(path: Path) -> Any:
-    with path.open("r", encoding="utf-8") as handle:
-        return json.load(handle)
-
-
-def load_cache(path: Path, disabled: bool) -> Dict[str, Any]:
-    if disabled or not path.exists():
-        return {}
-    try:
-        data = load_json(path)
-        return data if isinstance(data, dict) else {}
-    except (json.JSONDecodeError, OSError):
-        return {}
-
-
-def save_cache(path: Path, cache: Dict[str, Any], disabled: bool) -> None:
-    if not disabled:
-        atomic_write_json(path, cache)
-
-
-class CommonsClient:
-    def __init__(self, contact: str, thumb_width: int, delay: float, candidates: int) -> None:
-        self.thumb_width = max(300, min(int(thumb_width), 2400))
-        self.delay = max(0.0, float(delay))
-        self.candidates = max(1, min(int(candidates), 20))
-        self.session = requests.Session()
-        self.session.headers.update({
-            "User-Agent": (
-                f"ArteRupestreMap/1.0 ({contact}) "
-                f"Python-requests/{requests.__version__}"
-            ),
-            "Accept": "application/json",
-        })
-
-    def request(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        base = {
-            "format": "json",
-            "formatversion": 2,
-            "maxlag": 5,
-        }
-        base.update(params)
-
-        for attempt in range(1, MAX_RETRIES + 1):
-            try:
-                response = self.session.get(COMMONS_API, params=base, timeout=(8, 35))
-
-                if response.status_code == 429 or response.status_code >= 500:
-                    if attempt < MAX_RETRIES:
-                        wait = min(2 ** attempt, 10)
-                        print(
-                            f"  API temporariamente indisponível "
-                            f"({response.status_code}); nova tentativa em {wait}s."
-                        )
-                        time.sleep(wait)
-                        continue
-
-                response.raise_for_status()
-                payload = response.json()
-
-                if "error" in payload:
-                    code = payload["error"].get("code", "erro_desconhecido")
-                    info = payload["error"].get("info", "")
-                    if code == "maxlag" and attempt < MAX_RETRIES:
-                        time.sleep(min(2 ** attempt, 10))
-                        continue
-                    raise RuntimeError(f"API Wikimedia: {code}: {info}")
-
-                if self.delay:
-                    time.sleep(self.delay)
-                return payload
-
-            except (requests.RequestException, ValueError) as exc:
-                if attempt >= MAX_RETRIES:
-                    raise RuntimeError(f"Falha na API Wikimedia: {exc}") from exc
-                time.sleep(min(2 ** attempt, 10))
-
-        raise RuntimeError("Falha inesperada na API Wikimedia.")
-
-    def search_file_titles(self, query: str) -> List[str]:
-        payload = self.request({
-            "action": "query",
-            "list": "search",
-            "srsearch": query,
-            "srnamespace": 6,
-            "srlimit": self.candidates,
-            "srprop": "",
-        })
-        items = payload.get("query", {}).get("search", [])
-        return [
-            canonical_file_title(item.get("title", ""))
-            for item in items
-            if item.get("title")
-        ]
-
-    def fetch_files(self, titles: Iterable[str]) -> List[Dict[str, Any]]:
-        titles = [canonical_file_title(x) for x in titles if x]
-        if not titles:
-            return []
-
-        payload = self.request({
-            "action": "query",
-            "prop": "imageinfo",
-            "titles": "|".join(titles),
-            "iiprop": "url|size|mime|mediatype|extmetadata",
-            "iiurlwidth": self.thumb_width,
-            "iiextmetadatalanguage": "en",
-            "iiextmetadatafilter": (
-                "Artist|Credit|LicenseShortName|LicenseUrl|UsageTerms|"
-                "ImageDescription|ObjectName|Categories"
-            ),
-        })
-
-        pages = payload.get("query", {}).get("pages", [])
-        by_title: Dict[str, Dict[str, Any]] = {}
-
-        for page in pages:
-            title = page.get("title", "")
-            info_list = page.get("imageinfo") or []
-            if not title or not info_list:
-                continue
-
-            info = info_list[0]
-            media_type = (info.get("mediatype") or "").upper()
-            mime = (info.get("mime") or "").lower()
-
-            if media_type and media_type not in {"BITMAP", "DRAWING"}:
-                continue
-            if mime and not mime.startswith("image/"):
-                continue
-
-            ext = info.get("extmetadata") or {}
-            record = {
-                "commons_file": canonical_file_title(title),
-                "original_url": info.get("url"),
-                "thumbnail_url": info.get("thumburl") or info.get("url"),
-                "thumbnail_width": info.get("thumbwidth"),
-                "thumbnail_height": info.get("thumbheight"),
-                "width": info.get("width"),
-                "height": info.get("height"),
-                "mime": mime or None,
-                "page_url": info.get("descriptionurl") or commons_page_url(title),
-                "autor": ext_value(ext, "Artist") or ext_value(ext, "Credit") or None,
-                "credito": ext_value(ext, "Credit") or None,
-                "licenca": ext_value(ext, "LicenseShortName") or ext_value(ext, "UsageTerms") or None,
-                "licenca_url": ext_value(ext, "LicenseUrl") or None,
-                "descricao_imagem": ext_value(ext, "ImageDescription") or ext_value(ext, "ObjectName") or None,
-                "categorias_commons": ext_value(ext, "Categories") or None,
-            }
-            by_title[normalize_text(title)] = record
-
-        result = []
-        for title in titles:
-            record = by_title.get(normalize_text(title))
-            if record:
-                result.append(record)
-        return result
-
-    def fetch_exact_file(self, file_title: str) -> Optional[Dict[str, Any]]:
-        records = self.fetch_files([file_title])
-        return records[0] if records else None
-
-
-def query_tokens(query: str) -> List[str]:
+def query_tokens(query: str) -> list[str]:
     tokens = re.findall(r"[a-z0-9]+", normalize_text(query))
     return [token for token in tokens if len(token) >= 3 and token not in STOPWORDS]
 
 
-def score_candidate(candidate: Dict[str, Any], query: str, index: int) -> float:
-    title = normalize_text(candidate.get("commons_file", ""))
-    description = normalize_text(candidate.get("descricao_imagem", ""))
-    categories = normalize_text(candidate.get("categorias_commons", ""))
-    combined = f"{title} {description} {categories}"
+def base_text_score(candidate: dict[str, Any], query: str, rank_index: int) -> float:
+    title = normalize_text(candidate.get("title") or candidate.get("commons_file") or "")
+    desc = normalize_text(candidate.get("description") or candidate.get("descricao_imagem") or "")
+    source = normalize_text(candidate.get("source") or candidate.get("provider") or "")
+    combined = " ".join([title, desc, source])
 
-    score = max(0, 12 - index)
-
+    score = max(0.0, 14.0 - float(rank_index))
     for token in query_tokens(query):
         if token in title:
-            score += 7
+            score += 6.5
         elif token in combined:
-            score += 2
+            score += 2.2
 
     for term, weight in POSITIVE_TERMS.items():
-        normalized_term = normalize_text(term)
-        if normalized_term in title:
+        term_n = normalize_text(term)
+        if term_n in title:
             score += weight
-        elif normalized_term in combined:
+        elif term_n in combined:
             score += weight * 0.45
 
     for term, weight in NEGATIVE_TERMS.items():
-        normalized_term = normalize_text(term)
-        if normalized_term in title:
+        term_n = normalize_text(term)
+        if term_n in title:
             score -= weight
-        elif normalized_term in combined:
+        elif term_n in combined:
             score -= weight * 0.35
 
     width = candidate.get("width") or 0
     height = candidate.get("height") or 0
+    try:
+        width = int(width)
+        height = int(height)
+    except Exception:
+        width = height = 0
+
     if width >= 800 and height >= 500:
         score += 3
     if width >= 1600 and height >= 900:
@@ -477,220 +295,515 @@ def score_candidate(candidate: Dict[str, Any], query: str, index: int) -> float:
         score += 2
     if candidate.get("licenca_url"):
         score += 1
-
-    return round(score, 2)
-
-
-def ranked_candidates(client: CommonsClient, search_query: str) -> List[Dict[str, Any]]:
-    titles = client.search_file_titles(search_query)
-    records = client.fetch_files(titles)
-
-    for index, record in enumerate(records):
-        record["auto_score"] = score_candidate(record, search_query, index)
-
-    records.sort(key=lambda item: item.get("auto_score", -9999), reverse=True)
-    return records
+    return round(score, 3)
 
 
-def fallback_queries(local: Dict[str, Any]) -> List[str]:
-    imagem = local.get("imagem") or {}
-    primary = (imagem.get("commons_search") or "").strip()
-    nome = (local.get("nome") or "").strip()
-    pais = (local.get("pais_atual") or "").strip()
-    tipo = normalize_text(local.get("tipo") or "")
+class HttpClient:
+    def __init__(self, user_agent: str, delay: float = DEFAULT_DELAY):
+        self.delay = max(0.0, float(delay))
+        self.session = requests.Session()
+        self.session.headers.update({
+            "User-Agent": user_agent,
+            "Accept": "application/json, text/plain;q=0.9, */*;q=0.8",
+        })
 
-    queries: List[str] = []
+    def get_json(
+        self,
+        url: str,
+        *,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        for attempt in range(1, MAX_RETRIES + 1):
+            try:
+                resp = self.session.get(url, params=params, timeout=(10, 40), headers=headers)
+                if resp.status_code == 429 or resp.status_code >= 500:
+                    if attempt < MAX_RETRIES:
+                        time.sleep(min(2 ** attempt, 8))
+                        continue
+                resp.raise_for_status()
+                data = resp.json()
+                if self.delay:
+                    time.sleep(self.delay)
+                return data
+            except Exception:
+                if attempt >= MAX_RETRIES:
+                    raise
+                time.sleep(min(2 ** attempt, 8))
+        raise RuntimeError("Falha HTTP inesperada")
+
+    def get_bytes(
+        self,
+        url: str,
+        *,
+        headers: dict[str, str] | None = None,
+        max_bytes: int = 12_000_000,
+    ) -> bytes | None:
+        for attempt in range(1, MAX_RETRIES + 1):
+            try:
+                resp = self.session.get(url, timeout=(10, 45), headers=headers, stream=True)
+                if resp.status_code == 429 or resp.status_code >= 500:
+                    if attempt < MAX_RETRIES:
+                        time.sleep(min(2 ** attempt, 8))
+                        continue
+                resp.raise_for_status()
+                total = 0
+                chunks = []
+                for chunk in resp.iter_content(chunk_size=65536):
+                    if not chunk:
+                        continue
+                    total += len(chunk)
+                    if total > max_bytes:
+                        return None
+                    chunks.append(chunk)
+                if self.delay:
+                    time.sleep(self.delay)
+                return b"".join(chunks)
+            except Exception:
+                if attempt >= MAX_RETRIES:
+                    return None
+                time.sleep(min(2 ** attempt, 8))
+        return None
+
+
+class CommonsSource:
+    def __init__(self, client: HttpClient, thumb_width: int, candidates: int) -> None:
+        self.client = client
+        self.thumb_width = thumb_width
+        self.candidates = max(1, min(int(candidates), 50))
+
+    def search(self, query: str) -> list[dict[str, Any]]:
+        payload = self.client.get_json(
+            COMMONS_API,
+            params={
+                "action": "query",
+                "generator": "search",
+                "gsrsearch": query,
+                "gsrnamespace": 6,
+                "gsrlimit": self.candidates,
+                "prop": "imageinfo",
+                "iiprop": "url|size|mime|mediatype|extmetadata",
+                "iiurlwidth": self.thumb_width,
+                "iiextmetadatalanguage": "en",
+                "iiextmetadatafilter": (
+                    "Artist|Credit|LicenseShortName|LicenseUrl|UsageTerms|"
+                    "ImageDescription|ObjectName|Categories"
+                ),
+                "format": "json",
+                "formatversion": 2,
+                "maxlag": 5,
+            },
+        )
+        pages = payload.get("query", {}).get("pages", [])
+        results = []
+        for page in pages:
+            info_list = page.get("imageinfo") or []
+            if not info_list:
+                continue
+            info = info_list[0]
+            mime = (info.get("mime") or "").lower()
+            mediatype = (info.get("mediatype") or "").upper()
+            if mime and not mime.startswith("image/"):
+                continue
+            if mediatype and mediatype not in {"BITMAP", "DRAWING"}:
+                continue
+            ext = info.get("extmetadata") or {}
+            results.append({
+                "source_kind": "commons",
+                "title": page.get("title") or "",
+                "commons_file": canonical_file_title(page.get("title") or ""),
+                "thumbnail_url": info.get("thumburl") or info.get("url"),
+                "original_url": info.get("url"),
+                "page_url": info.get("descriptionurl") or commons_page_url(page.get("title") or ""),
+                "width": info.get("width"),
+                "height": info.get("height"),
+                "autor": ext_value(ext, "Artist") or ext_value(ext, "Credit") or None,
+                "credito": ext_value(ext, "Credit") or None,
+                "licenca": ext_value(ext, "LicenseShortName") or ext_value(ext, "UsageTerms") or None,
+                "licenca_url": ext_value(ext, "LicenseUrl") or None,
+                "description": ext_value(ext, "ImageDescription") or ext_value(ext, "ObjectName") or None,
+                "source": "Wikimedia Commons",
+                "provider": "commons",
+            })
+        return results
+
+
+class OpenverseSource:
+    def __init__(self, client: HttpClient, candidates: int) -> None:
+        self.client = client
+        self.candidates = max(1, min(int(candidates), 50))
+
+    def search(self, query: str) -> list[dict[str, Any]]:
+        payload = self.client.get_json(
+            OPENVERSE_API,
+            params={
+                "q": query,
+                "page_size": self.candidates,
+                "mature": "false",
+            },
+            headers={"Accept": "application/json"},
+        )
+        results = []
+        for item in payload.get("results", []) or []:
+            thumb = item.get("thumbnail") or item.get("url")
+            if not thumb:
+                continue
+            creator = item.get("creator") or item.get("foreign_landing_url") or None
+            lic = item.get("license")
+            lic_ver = item.get("license_version")
+            lic_display = None
+            if lic:
+                lic_display = lic.upper()
+                if lic_ver:
+                    lic_display = f"{lic_display} {lic_ver}"
+            results.append({
+                "source_kind": "openverse",
+                "title": item.get("title") or item.get("id") or "Imagem Openverse",
+                "thumbnail_url": thumb,
+                "original_url": item.get("url") or thumb,
+                "page_url": item.get("foreign_landing_url") or item.get("detail_url") or item.get("url"),
+                "width": item.get("width"),
+                "height": item.get("height"),
+                "autor": creator,
+                "credito": creator,
+                "licenca": lic_display,
+                "licenca_url": item.get("license_url") or commons_license_url(item.get("license")),
+                "description": item.get("title") or item.get("creator") or None,
+                "source": item.get("source") or "Openverse",
+                "provider": item.get("source") or "openverse",
+            })
+        return results
+
+
+def build_queries(local: dict[str, Any], max_variants: int) -> list[str]:
+    image = local.get("imagem") or {}
+    primary = (image.get("commons_search") or image.get("openverse_search") or "").strip()
+    nome = str(local.get("nome") or "").strip()
+    pais = str(local.get("pais_atual") or "").strip()
+    tipo = normalize_text(str(local.get("tipo") or ""))
+
+    target_prompts = image.get("alvo_visual") or []
+    if isinstance(target_prompts, str):
+        target_prompts = [target_prompts]
+
+    queries = []
     if primary:
         queries.append(primary)
+    stem = f'"{nome}" {pais}'.strip()
+    if "petro" in tipo or "gravur" in tipo:
+        queries.extend([
+            f"{stem} petroglyph",
+            f"{stem} prehistoric petroglyph rock engraving",
+        ])
+    elif "pint" in tipo or "pict" in tipo:
+        queries.extend([
+            f"{stem} rock painting",
+            f"{stem} prehistoric cave painting",
+        ])
+    elif "ocre" in tipo or "ochre" in tipo:
+        queries.extend([
+            f"{stem} engraved ochre",
+            f"{stem} prehistoric engraved ochre artifact",
+        ])
+    elif "ceram" in tipo or "potter" in tipo:
+        queries.extend([
+            f"{stem} prehistoric ceramic pottery",
+            f"{stem} archaeological pottery artifact",
+        ])
+    else:
+        queries.extend([
+            f"{stem} rock art",
+            f"{stem} prehistoric art",
+        ])
+    for prompt in target_prompts:
+        prompt = str(prompt).strip()
+        if prompt:
+            queries.append(f"{stem} {prompt}")
 
-    if nome:
-        if "petro" in tipo or "gravur" in tipo:
-            queries.append(f'"{nome}" petroglyph')
-        elif "pint" in tipo or "pict" in tipo:
-            queries.append(f'"{nome}" rock painting')
-        else:
-            queries.append(f'"{nome}" rock art')
-
-        if pais:
-            queries.append(f'"{nome}" {pais}')
-
-    result: List[str] = []
+    result = []
     seen = set()
-    for query in queries:
-        key = normalize_text(query)
-        if query and key not in seen:
+    for q in queries:
+        key = normalize_text(q)
+        if q and key not in seen:
             seen.add(key)
-            result.append(query)
+            result.append(q)
+        if len(result) >= max_variants:
+            break
     return result
 
 
-def choose_interactively(local: Dict[str, Any], candidates: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
-    print()
-    print("=" * 78)
-    print(f"{local.get('nome')} — {local.get('pais_atual')}")
-    print("=" * 78)
-
-    for idx, item in enumerate(candidates, start=1):
-        print(f"\n[{idx}] {item.get('commons_file')}")
-        print(f"    score: {item.get('auto_score')}")
-        print(f"    licença: {item.get('licenca') or 'não identificada'}")
-        print(f"    autor: {item.get('autor') or 'não identificado'}")
-        print(f"    página: {item.get('page_url')}")
-        if item.get("descricao_imagem"):
-            desc = item["descricao_imagem"]
-            if len(desc) > 220:
-                desc = desc[:217] + "..."
-            print(f"    descrição: {desc}")
-
-    print("\n[0] Não escolher imagem para este local.")
-    while True:
-        raw = input(f"Escolha 0–{len(candidates)}: ").strip()
-        if raw.isdigit():
-            choice = int(raw)
-            if choice == 0:
-                return None
-            if 1 <= choice <= len(candidates):
-                return candidates[choice - 1]
-        print("Escolha inválida.")
-
-
-def cache_key(local: Dict[str, Any], queries: List[str]) -> str:
-    return f"{local.get('id', '')}|{' || '.join(queries)}"
-
-
-def image_is_resolved(local: Dict[str, Any]) -> bool:
+def visual_prompts_for_local(local: dict[str, Any]) -> tuple[list[str], list[str]]:
     image = local.get("imagem") or {}
-    status = normalize_text(image.get("status") or "")
+    target = image.get("alvo_visual") or []
+    if isinstance(target, str):
+        target = [target]
+    nome = str(local.get("nome") or "")
+    tipo = normalize_text(str(local.get("tipo") or ""))
+
+    positives = [
+        "prehistoric art object",
+        "archaeological artifact",
+        "rock art panel",
+    ]
+    negatives = [
+        "landscape",
+        "tourist photo",
+        "museum building exterior",
+        "cave entrance",
+        "map",
+        "sign",
+        "road",
+        "empty landscape",
+        "person standing in front of cave",
+    ]
+
+    if "petro" in tipo or "gravur" in tipo:
+        positives.extend([
+            "prehistoric petroglyph",
+            "rock engraving",
+            "engraved rock art panel",
+        ])
+    if "pint" in tipo or "pict" in tipo:
+        positives.extend([
+            "prehistoric cave painting",
+            "ancient rock painting",
+            "painted rock art panel",
+        ])
+    if "stencil" in tipo:
+        positives.append("hand stencil rock art")
+    if "ocre" in tipo or "ochre" in tipo:
+        positives.extend([
+            "engraved ochre stone",
+            "prehistoric engraved ochre artifact",
+        ])
+    if "ceram" in tipo or "potter" in tipo:
+        positives.extend([
+            "prehistoric ceramic artifact",
+            "archaeological pottery",
+        ])
+
+    for item in target:
+        item = str(item).strip()
+        if item:
+            positives.append(item)
+
+    if nome:
+        positives.append(f"{nome} prehistoric art")
+    return positives, negatives
+
+
+class ClipRanker:
+    def __init__(self, client: HttpClient, device: str | None = None) -> None:
+        if torch is None or open_clip is None:
+            raise RuntimeError(
+                "OpenCLIP não está instalado. Instale open_clip_torch e torch ou use --disable-clip."
+            )
+        if device:
+            self.device = device
+        else:
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.client = client
+        self.model, _, self.preprocess = open_clip.create_model_and_transforms(
+            DEFAULT_CLIP_MODEL,
+            pretrained=DEFAULT_CLIP_PRETRAINED,
+            device=self.device,
+        )
+        self.tokenizer = open_clip.get_tokenizer(DEFAULT_CLIP_MODEL)
+        self.model.eval()
+
+    def image_from_url(self, url: str) -> Image.Image | None:
+        raw = self.client.get_bytes(url)
+        if not raw:
+            return None
+        try:
+            return Image.open(io.BytesIO(raw)).convert("RGB")
+        except Exception:
+            return None
+
+    def text_features(self, texts: list[str]):
+        with torch.no_grad():
+            tokens = self.tokenizer(texts).to(self.device)
+            features = self.model.encode_text(tokens)
+            features = features / features.norm(dim=-1, keepdim=True)
+        return features
+
+    def rank(
+        self,
+        candidates: list[dict[str, Any]],
+        local: dict[str, Any],
+        max_downloads: int,
+    ) -> list[dict[str, Any]]:
+        if not candidates:
+            return candidates
+        positives, negatives = visual_prompts_for_local(local)
+        positive_features = self.text_features(positives)
+        negative_features = self.text_features(negatives)
+        limited = candidates[:max_downloads]
+        for item in limited:
+            image_url = item.get("thumbnail_url") or item.get("original_url")
+            image = self.image_from_url(str(image_url)) if image_url else None
+            if image is None:
+                item["clip_score"] = None
+                continue
+            with torch.no_grad():
+                tensor = self.preprocess(image).unsqueeze(0).to(self.device)
+                image_features = self.model.encode_image(tensor)
+                image_features = image_features / image_features.norm(dim=-1, keepdim=True)
+                pos_scores = (100.0 * image_features @ positive_features.T).squeeze(0)
+                neg_scores = (100.0 * image_features @ negative_features.T).squeeze(0)
+                pos = float(pos_scores.max().item())
+                neg = float(neg_scores.max().item())
+                mean_pos = float(pos_scores.mean().item())
+                mean_neg = float(neg_scores.mean().item())
+                item["clip_score"] = round(
+                    (0.65 * pos + 0.35 * mean_pos) - (0.60 * neg + 0.40 * mean_neg),
+                    3,
+                )
+                item["clip_positive_max"] = round(pos, 3)
+                item["clip_negative_max"] = round(neg, 3)
+        for item in candidates[max_downloads:]:
+            item["clip_score"] = None
+        candidates.sort(
+            key=lambda x: (
+                -9999 if x.get("clip_score") is None else float(x.get("clip_score")),
+                float(x.get("text_score") or -9999),
+            ),
+            reverse=True,
+        )
+        return candidates
+
+
+def merged_candidates_for_local(
+    local: dict[str, Any],
+    queries: list[str],
+    openverse: OpenverseSource,
+    commons: CommonsSource,
+) -> list[dict[str, Any]]:
+    merged = []
+    seen_urls = set()
+    for query in queries:
+        commons_items = commons.search(query)
+        openverse_items = openverse.search(query)
+        combined = []
+        for idx, item in enumerate(openverse_items):
+            item = dict(item)
+            item["query_used"] = query
+            item["text_score"] = base_text_score(item, query, idx)
+            combined.append(item)
+        for idx, item in enumerate(commons_items):
+            item = dict(item)
+            item["query_used"] = query
+            item["text_score"] = base_text_score(item, query, idx)
+            combined.append(item)
+        combined.sort(key=lambda x: float(x.get("text_score") or -9999), reverse=True)
+        for item in combined:
+            key = item.get("original_url") or item.get("thumbnail_url") or item.get("page_url")
+            if not key or key in seen_urls:
+                continue
+            seen_urls.add(key)
+            merged.append(item)
+    merged.sort(key=lambda x: float(x.get("text_score") or -9999), reverse=True)
+    return merged
+
+
+def image_is_resolved(local: dict[str, Any]) -> bool:
+    image = local.get("imagem") or {}
+    status = normalize_text(str(image.get("status") or ""))
+    rights = normalize_text(str(image.get("direitos") or ""))
     return bool(
-        image.get("commons_file")
-        and image.get("thumbnail_url")
+        (image.get("thumbnail_url") or image.get("original_url"))
         and status.startswith("resolvido")
+        and rights in {"livre", "permissao_verificada", "uso_autorizado", "aberta_auto"}
     )
 
 
 def merge_image_data(
-    local: Dict[str, Any],
-    selected: Dict[str, Any],
-    status: str,
-    source_query: Optional[str],
+    local: dict[str, Any],
+    selected: dict[str, Any],
+    rights: str = "aberta_auto",
 ) -> None:
     image = local.setdefault("imagem", {})
     preserved = {
         "commons_search": image.get("commons_search"),
+        "openverse_search": image.get("openverse_search"),
         "preferencia": image.get("preferencia"),
+        "alvo_visual": image.get("alvo_visual"),
     }
-
     image.update({
-        "commons_file": selected.get("commons_file"),
-        "original_url": selected.get("original_url"),
         "thumbnail_url": selected.get("thumbnail_url"),
-        "thumbnail_width": selected.get("thumbnail_width"),
-        "thumbnail_height": selected.get("thumbnail_height"),
+        "original_url": selected.get("original_url"),
         "page_url": selected.get("page_url"),
         "autor": selected.get("autor"),
         "credito": selected.get("credito"),
         "licenca": selected.get("licenca"),
         "licenca_url": selected.get("licenca_url"),
-        "descricao_imagem": selected.get("descricao_imagem"),
-        "auto_score": selected.get("auto_score"),
-        "consulta_usada": source_query,
-        "status": status,
+        "descricao_imagem": selected.get("description"),
+        "source_kind": selected.get("source_kind"),
+        "fonte_dominio": selected.get("source"),
+        "query_used": selected.get("query_used"),
+        "text_score": selected.get("text_score"),
+        "clip_score": selected.get("clip_score"),
+        "status": "resolvido_automaticamente",
+        "direitos": rights,
     })
-
+    if selected.get("source_kind") == "commons":
+        image["commons_file"] = selected.get("commons_file")
     for key, value in preserved.items():
         if value is not None:
             image[key] = value
 
 
 def resolve_one(
-    client: CommonsClient,
-    local: Dict[str, Any],
-    cache: Dict[str, Any],
+    local: dict[str, Any],
+    cache: dict[str, Any],
     use_cache: bool,
-    interactive: bool,
+    openverse: OpenverseSource,
+    commons: CommonsSource,
+    clip_ranker: ClipRanker | None,
+    query_variants: int,
+    max_download_candidates: int,
     overwrite: bool,
 ) -> str:
-    image = local.setdefault("imagem", {})
-
     if image_is_resolved(local) and not overwrite:
         return "ja_resolvido"
 
-    # Um commons_file preenchido manualmente tem prioridade sobre qualquer busca.
-    explicit_file = image.get("commons_file")
-    if explicit_file and not image_is_resolved(local):
-        selected = client.fetch_exact_file(explicit_file)
-        if selected:
-            selected["auto_score"] = None
-            merge_image_data(local, selected, status="resolvido_manual", source_query=None)
-            return "resolvido_manual"
-
-        image["status"] = "erro_arquivo_manual"
-        image["erro"] = f"Arquivo não encontrado no Commons: {explicit_file}"
-        return "erro"
-
-    queries = fallback_queries(local)
+    queries = build_queries(local, query_variants)
     if not queries:
-        image["status"] = "sem_consulta"
+        local.setdefault("imagem", {})["status"] = "sem_consulta"
         return "sem_resultado"
 
-    key = cache_key(local, queries)
-    candidates: List[Dict[str, Any]] = []
-
-    if use_cache and key in cache and isinstance(cache[key], list):
-        candidates = cache[key]
-
-    source_query = queries[0]
-
-    if not candidates:
-        for query in queries:
-            try:
-                candidates = ranked_candidates(client, query)
-            except RuntimeError as exc:
-                print(f"  Aviso em '{query}': {exc}")
-                candidates = []
-
-            if candidates:
-                source_query = query
-                break
-
-        if use_cache and candidates:
-            cache[key] = candidates
+    cache_key = f"{local.get('id','')}|{'||'.join(queries)}"
+    candidates = []
+    if use_cache and cache_key in cache:
+        cached = cache.get(cache_key)
+        if isinstance(cached, list):
+            candidates = [dict(item) for item in cached]
 
     if not candidates:
+        candidates = merged_candidates_for_local(local, queries, openverse, commons)
+        if use_cache:
+            cache[cache_key] = candidates
+
+    if not candidates:
+        image = local.setdefault("imagem", {})
         image["status"] = "sem_resultado"
-        image["consulta_usada"] = source_query
+        image["direitos"] = "nao_verificado"
         return "sem_resultado"
 
-    if interactive:
-        selected = choose_interactively(local, candidates)
-        if selected is None:
-            image["status"] = "pendente_revisao"
-            image["consulta_usada"] = source_query
-            return "pendente_revisao"
-        status = "resolvido_curado"
-    else:
-        selected = candidates[0]
-        status = "resolvido_automaticamente"
+    if clip_ranker is not None:
+        try:
+            candidates = clip_ranker.rank(candidates, local, max_download_candidates)
+        except Exception as exc:
+            print(f"  Aviso: falha no OpenCLIP para {local.get('nome')}: {exc}")
 
-    merge_image_data(local, selected, status=status, source_query=source_query)
-    return status
+    selected = candidates[0]
+    rights = "aberta_auto" if selected.get("licenca") or selected.get("licenca_url") else "nao_verificado"
+    merge_image_data(local, selected, rights=rights)
+    return "resolvido_automaticamente"
 
 
 def main() -> int:
     args = parse_args()
-
-    if not args.contact:
-        print(
-            "É necessário informar um contato para identificar o script perante "
-            "a Wikimedia.\n\n"
-            "Exemplo:\n"
-            '  python image_resolver.py --contact '
-            '"https://github.com/SEU_USUARIO/SEU_REPOSITORIO"\n\n'
-            "Você também pode definir a variável WIKIMEDIA_CONTACT.",
-            file=sys.stderr,
-        )
-        return 2
-
     try:
         input_path = locate_input(args.input)
     except FileNotFoundError as exc:
@@ -698,9 +811,8 @@ def main() -> int:
         return 2
 
     if args.in_place and args.output:
-        print("Erro: use --in-place OU --output, não os dois.", file=sys.stderr)
+        print("Erro: use --in-place OU --output, não ambos.", file=sys.stderr)
         return 2
-
     if args.in_place:
         output_path = input_path
     elif args.output:
@@ -710,7 +822,7 @@ def main() -> int:
 
     try:
         database = load_json(input_path)
-    except (OSError, json.JSONDecodeError) as exc:
+    except Exception as exc:
         print(f"Erro ao ler {input_path}: {exc}", file=sys.stderr)
         return 2
 
@@ -718,9 +830,9 @@ def main() -> int:
         locais = database.get("locais")
     elif isinstance(database, list):
         locais = database
+        database = {"metadata": {}, "locais": locais}
     else:
         locais = None
-
     if not isinstance(locais, list):
         print(
             "Erro: o JSON precisa conter uma lista em 'locais' ou ser uma lista na raiz.",
@@ -731,39 +843,45 @@ def main() -> int:
     cache_path = args.cache.expanduser().resolve()
     cache = load_cache(cache_path, args.no_cache)
 
-    client = CommonsClient(
-        contact=args.contact,
-        thumb_width=args.thumb_width,
-        delay=args.delay,
-        candidates=args.candidates,
-    )
+    ua = f"ArteRupestreResolver/2.0 ({args.contact})"
+    http_client = HttpClient(ua, delay=args.delay)
+    openverse = OpenverseSource(http_client, args.candidates)
+    commons = CommonsSource(http_client, args.thumb_width, args.candidates)
+    clip_ranker = None
+    if not args.disable_clip:
+        try:
+            clip_ranker = ClipRanker(http_client, device=args.device)
+            print(f"OpenCLIP carregado em {clip_ranker.device}.")
+        except Exception as exc:
+            print(f"Aviso: OpenCLIP indisponível, seguindo apenas com ranking textual. {exc}")
+            clip_ranker = None
 
     total = len(locais)
     max_items = total if args.limit is None else min(max(args.limit, 0), total)
-    counters: Dict[str, int] = {}
+    counters: dict[str, int] = {}
 
     print(f"Entrada : {input_path}")
     print(f"Saída   : {output_path}")
     print(f"Locais  : {total}")
-    print(f"Processar nesta execução: {max_items}\n")
+    print(f"Processar nesta execução: {max_items}")
 
     processed = 0
-
     try:
         for index, local in enumerate(locais, start=1):
             if processed >= max_items:
                 break
-
             name = local.get("nome") or local.get("id") or f"Local {index}"
             print(f"[{index}/{total}] {name}")
-
             try:
                 result = resolve_one(
-                    client=client,
                     local=local,
                     cache=cache,
                     use_cache=not args.no_cache,
-                    interactive=args.interactive,
+                    openverse=openverse,
+                    commons=commons,
+                    clip_ranker=clip_ranker,
+                    query_variants=args.query_variants,
+                    max_download_candidates=args.download_candidates,
                     overwrite=args.overwrite,
                 )
             except KeyboardInterrupt:
@@ -774,57 +892,47 @@ def main() -> int:
                 image["status"] = "erro"
                 image["erro"] = str(exc)
                 print(f"  Erro: {exc}")
-
             counters[result] = counters.get(result, 0) + 1
             processed += 1
-
             image = local.get("imagem") or {}
             if result.startswith("resolvido"):
-                print(f"  ✓ {result}: {image.get('commons_file')}")
+                print(
+                    f"  ✓ {result}: {image.get('original_url') or image.get('thumbnail_url')} "
+                    f"(fonte={image.get('fonte_dominio')}, clip={image.get('clip_score')}, texto={image.get('text_score')})"
+                )
             elif result == "ja_resolvido":
                 print("  ↷ já resolvido; mantido.")
-            elif result == "sem_resultado":
-                print("  ! nenhum arquivo adequado encontrado.")
-            elif result == "pendente_revisao":
-                print("  → deixado para revisão.")
             else:
                 print(f"  ! status: {result}")
 
             atomic_write_json(output_path, database)
             save_cache(cache_path, cache, args.no_cache)
-
     except KeyboardInterrupt:
         print("\nInterrompido pelo usuário. Salvando progresso...")
         atomic_write_json(output_path, database)
         save_cache(cache_path, cache, args.no_cache)
         return 130
 
-    if isinstance(database, dict):
-        metadata = database.setdefault("metadata", {})
-        metadata["arquivo_imagens_resolvido"] = True
-        metadata["resolucao_imagens"] = {
-            "servico": "Wikimedia Commons",
-            "miniatura_largura_px": client.thumb_width,
-            "modo": "interativo" if args.interactive else "automatico",
-            "observacao": (
-                "Imagens selecionadas automaticamente devem ser revisadas "
-                "antes da publicação definitiva."
-            ),
-        }
+    metadata = database.setdefault("metadata", {})
+    metadata["arquivo_imagens_resolvido"] = True
+    metadata["resolucao_imagens"] = {
+        "servicos": ["Openverse", "Wikimedia Commons"],
+        "modo": "automatico_multimodal",
+        "clip": "OpenCLIP" if clip_ranker is not None else "desativado",
+        "miniatura_largura_px": args.thumb_width,
+        "observacao": (
+            "A seleção automática privilegia imagens abertas e similares visualmente ao tipo de vestígio. "
+            "Ainda assim, uma revisão pontual continua recomendável para os casos mais raros."
+        ),
+    }
 
     atomic_write_json(output_path, database)
     save_cache(cache_path, cache, args.no_cache)
 
     print("\nConcluído.")
     print(f"Arquivo gerado: {output_path}")
-    print("Resumo:")
     for status, count in sorted(counters.items()):
         print(f"  {status}: {count}")
-
-    print(
-        "\nRecomendação: revise os links das imagens antes de publicar o mapa, "
-        "principalmente os itens marcados como 'resolvido_automaticamente'."
-    )
     return 0
 
 
